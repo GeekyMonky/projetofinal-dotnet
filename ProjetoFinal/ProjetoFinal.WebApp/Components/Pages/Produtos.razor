@@ -1,0 +1,27 @@
+﻿@page "/produtos"  
+@using ProjetoFinal.Shared
+@inject HttpClient Http
+
+<MudTable Items="@produtos">  
+    <HeaderContent>  
+        <MudTh>Nome</MudTh>  
+        <MudTh>Preço</MudTh>  
+        <MudTh>Categoria</MudTh>  
+        <MudTh>Descrição</MudTh>  
+    </HeaderContent>  
+    <RowTemplate>  
+        <MudTd DataLabel="Nome">@context.Nome</MudTd>  
+        <MudTd DataLabel="Preço">@context.Preco</MudTd>  
+        <MudTd DataLabel="Categoria">@context.Categoria</MudTd>  
+        <MudTd DataLabel="Descrição">@context.Descricao</MudTd>  
+    </RowTemplate>  
+</MudTable>  
+
+@code {  
+    List<Produto> produtos = new();   
+
+    protected override async Task OnInitializedAsync()
+    {
+        produtos = await Http.GetFromJsonAsync<List<Produto>>("/produto");
+    }
+}
