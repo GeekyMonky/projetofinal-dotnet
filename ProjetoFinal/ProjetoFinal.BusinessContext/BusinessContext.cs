@@ -11,7 +11,7 @@ namespace ProjetoFinal.BusinessContext
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Data Source=SQL6033.site4now.net;Initial Catalog=db_abaa2b_eletrotudo;User Id=db_abaa2b_eletrotudo_admin;Password=4#qzUHW3yKMSX@t");
+            optionsBuilder.UseSqlServer("Data Source=SQL6033.site4now.net;Initial Catalog=db_abb447_eletrotudo;User Id=db_abb447_eletrotudo_admin;Password=123456a!");
         }
     }
 }
