@@ -1,3 +1,4 @@
+using MudBlazor.Services;
 using ProjetoFinal.WebApp.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,6 +6,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddMudServices();
+
+builder.Services.AddScoped(sp =>
+    new HttpClient { BaseAddress = new Uri("https://localhost:7222") });
+
 
 var app = builder.Build();
 
