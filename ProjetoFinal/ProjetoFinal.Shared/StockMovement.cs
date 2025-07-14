@@ -10,7 +10,7 @@ namespace ProjetoFinal.Shared
     {
         public new int Id { get; set; }
         public int Quantity { get; set; }
-        public bool IsEntry { get; set; }
+        public DateTime Date { get; set; }
         public int ProductId { get; set; }
         public Product Product { get; set; }
     }

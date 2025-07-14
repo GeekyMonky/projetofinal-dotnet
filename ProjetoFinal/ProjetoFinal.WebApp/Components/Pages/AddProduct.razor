@@ -1,0 +1,94 @@
+﻿@page "/addproduct"
+@page "/editproduct/{Id:int}"
+@inject IApiService ApiService
+@using ProjetoFinal.Shared
+@rendermode InteractiveServer
+@inject ISnackbar Snackbar
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+
+@if(Id > 0)
+{
+    <h3>Edit Product</h3>
+}
+else
+{
+    <h3>Add Product</h3>
+}
+
+
+<EditForm FormName="ProductForm" Model="Product" OnValidSubmit="OnAddProduct">
+    <div class="mb-3">
+        <label for="name" class="form-label">Name:</label>
+        <InputText id="name" class="form-control" placeholder="" @bind-Value="Product.Name" />
+    </div>
+    <div class="mb-3">
+        <label for="description" class="form-label">Description:</label>
+        <InputTextArea id="description" class="form-control" @bind-Value="Product.Description" />
+    </div>
+    <div class="mb-3">
+        <label for="price" class="form-label">Price:</label>
+        <InputNumber id="price" class="form-control" @bind-Value="Product.Price" />
+    </div>
+    <div class="mb-3">
+        <label for="stock-quantity" class="form-label">Stock Quantity:</label>
+        <InputNumber id="stock-quantity" class="form-control" @bind-Value="Product.StockQuantity" />
+    </div>
+    @{ var buttonText = Id > 0 ? "Save" : "Add"; }
+    <button class="btn btn-primary" type="submit">@buttonText</button>
+</EditForm>
+@Message
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+    private Product Product { get; set; } = new();
+    private string Message { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (Id > 0)
+        {
+            Product = await ApiService.GetProductAsync(Id);
+        }
+    }
+
+    private async Task OnAddProduct()
+    {
+        if (Id > 0)
+        {
+            var response = await ApiService.UpdateProduct(Product);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Product updated successfully!", Severity.Success);
+                Product = new();
+            }
+            else
+            {
+                Snackbar.Add("Failed to update product.", Severity.Error);
+            }
+
+        }
+        else
+        {
+            var response = await ApiService.AddProductAsync(Product);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Product added successfully!", Severity.Success);
+                Product = new();
+            }
+            else
+            {
+                Snackbar.Add("Failed to add product.", Severity.Error);
+            }
+        }
+
+    }
+
+
+}

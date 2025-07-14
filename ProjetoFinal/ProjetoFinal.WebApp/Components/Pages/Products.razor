@@ -1,0 +1,89 @@
+﻿@page "/products"
+@using ProjetoFinal.Shared
+@inject IApiService ApiService
+@rendermode InteractiveServer
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<h3>Products</h3>
+<h3>@Message</h3>
+
+
+<MudTable Items="ProductList" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Description</MudTh>
+        <MudTh>Price</MudTh>
+        <MudTh>Stock Quantity</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Price">@context.Price</MudTd>
+        <MudTd DataLabel="StockQuantity">@context.StockQuantity</MudTd>
+        <MudTd DataLabel="Actions">
+            <MudIconButton 
+                Icon="@Icons.Material.Filled.Visibility" aria-label="edit"
+                OnClick="() => OnEditProduct(context.Id)">
+            </MudIconButton>
+            <MudIconButton
+                Icon="@Icons.Material.Filled.Delete" aria-label="delete" 
+                OnClick="() => OnProductDelete(context.Id)" >
+            </MudIconButton>             
+            </MudTd>
+    </RowTemplate>
+</MudTable>
+
+
+@code {
+
+    private string Message { get; set; } = string.Empty;
+
+    private List<Product> ProductList { get; set; } = new();
+
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            await LoadProducts();
+        }
+        catch (Exception)
+        {
+            Message = "Error fetching products!";
+        }
+    }
+
+    private async Task LoadProducts()
+    {
+        ProductList = await ApiService.GetProductsAsync();
+        StateHasChanged();
+    }
+
+    private async void OnProductDelete(int id)
+    {
+        var response = await ApiService.DeleteProductAsync(id);
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Product deleted successfully!", Severity.Success);
+            await LoadProducts();
+        }
+        else
+        {
+            Snackbar.Add("Error deleting product!", Severity.Error);
+            return;
+        }
+    }
+
+    private void OnEditProduct(int id)
+    {
+        NavigationManager.NavigateTo($"editproduct/{id}");
+    }
+
+
+
+    
+}
