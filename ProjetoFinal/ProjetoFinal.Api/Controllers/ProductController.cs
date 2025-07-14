@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjetoFinal.BusinessContext;
+using ProjetoFinal.BusinessContext.Entities;
 using ProjetoFinal.Shared;
 
 namespace ProjetoFinal.Api.Controllers
@@ -33,6 +34,7 @@ namespace ProjetoFinal.Api.Controllers
                     Description = product.Description,
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
+                    CategoryId = product.CategoryId,
                 };
 
                 productList.Add(productDto);
@@ -59,6 +61,7 @@ namespace ProjetoFinal.Api.Controllers
                     Description = product.Description,
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
+                    CategoryId = product.CategoryId,
                 };
 
                 return Ok(product);
@@ -80,6 +83,7 @@ namespace ProjetoFinal.Api.Controllers
                 Description = product.Description,
                 Price = product.Price,
                 StockQuantity = product.StockQuantity,
+                CategoryId = product.CategoryId, 
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             };
@@ -115,6 +119,7 @@ namespace ProjetoFinal.Api.Controllers
             existingProduct.Description = product.Description;
             existingProduct.Price = product.Price;
             existingProduct.StockQuantity = product.StockQuantity;
+            existingProduct.CategoryId = product.CategoryId;
             existingProduct.UpdatedAt = DateTime.UtcNow;
 
             var result = await _businessContext.SaveChangesAsync(true);

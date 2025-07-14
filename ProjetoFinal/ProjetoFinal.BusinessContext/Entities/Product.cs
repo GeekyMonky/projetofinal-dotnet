@@ -19,8 +19,8 @@ namespace ProjetoFinal.BusinessContext.Entities
         public decimal Price { get; set; }
         public int StockQuantity { get; set; }
         public int CategoryId { get; set; }
-        public Category Category { get; set; }
-        public ICollection<Image> Images { get; set; }
-        public ICollection<StockMovement> StockMovements { get; set; }
+        public Category? Category { get; set; }
+        public ICollection<Image>? Images { get; set; }
+        public ICollection<StockMovement>? StockMovements { get; set; }
     }
 }
