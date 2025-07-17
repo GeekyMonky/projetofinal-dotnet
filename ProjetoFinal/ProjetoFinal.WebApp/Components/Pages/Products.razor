@@ -11,6 +11,7 @@
 
 <MudTable Items="ProductList" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
     <HeaderContent>
+        <MudTh>Image</MudTh>
         <MudTh>Name</MudTh>
         <MudTh>Description</MudTh>
         <MudTh>Price</MudTh>
@@ -19,6 +20,16 @@
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
+        <MudTd DataLabel="Image">
+            @if (context.Images != null && context.Images.Any())
+            {
+                <MudImage Width="100" Height="100" Src="@context.Images.First().Url" Alt="@context.Name" />
+            }
+            else
+            {
+                <span>No Image</span>
+            }
+        </MudTd>
         <MudTd DataLabel="Name">@context.Name</MudTd>
         <MudTd DataLabel="Description">@context.Description</MudTd>
         <MudTd DataLabel="Price">@context.Price</MudTd>
@@ -62,6 +73,7 @@
     private async Task LoadProducts()
     {
         ProductList = await ApiService.GetProductsAsync();
+        _loading = false;
         StateHasChanged();
     }
 

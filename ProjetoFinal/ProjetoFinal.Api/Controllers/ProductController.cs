@@ -21,7 +21,10 @@ namespace ProjetoFinal.Api.Controllers
         [HttpGet("/products")]
         public async Task<IActionResult> GetProducts()
         {
-            var products = await _businessContext.Products.Where(p => p.IsDeleted.Equals(false)).ToListAsync();
+            var products = await _businessContext.Products
+                .Where(p => p.IsDeleted.Equals(false))
+                .Include(p => p.Images)
+                .ToListAsync();
 
             List<ProjetoFinal.Shared.Product> productList = new List<ProjetoFinal.Shared.Product>();
 
@@ -35,6 +38,12 @@ namespace ProjetoFinal.Api.Controllers
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
                     CategoryId = product.CategoryId,
+                    Images = product.Images?.Select(img => new ProjetoFinal.Shared.Image
+                    {
+                        Id = img.Id,
+                        Url = img.Url,
+                        ProductId = img.ProductId
+                    }).ToList()
                 };
 
                 productList.Add(productDto);
