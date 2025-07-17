@@ -39,7 +39,7 @@ else
         <label for="category-id" class="form-label">Category Id:</label>
         <InputNumber id="category-id" class="form-control" @bind-Value="Product.CategoryId" />
     </div>
-    @{ var buttonText = Id > 0 ? "Save" : "Add"; }
+    @{ var buttonText = Id > 0 ? "Edit" : "Add"; }
     <button class="btn btn-primary" type="submit">@buttonText</button>
 </EditForm>
 @Message

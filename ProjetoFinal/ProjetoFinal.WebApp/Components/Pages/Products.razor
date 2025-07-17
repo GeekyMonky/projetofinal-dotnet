@@ -16,14 +16,14 @@
         <MudTh>Description</MudTh>
         <MudTh>Price</MudTh>
         <MudTh>Stock Quantity</MudTh>
-        <MudTh>Category Id</MudTh>
+        <MudTh>Category</MudTh>
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Image">
             @if (context.Images != null && context.Images.Any())
             {
-                <MudImage Width="100" Height="100" Src="@context.Images.First().Url" Alt="@context.Name" />
+                <MudImage Width="150" Height="150" Src="@context.Images.First().Url" Alt="@context.Name" />
             }
             else
             {
@@ -34,10 +34,14 @@
         <MudTd DataLabel="Description">@context.Description</MudTd>
         <MudTd DataLabel="Price">@context.Price</MudTd>
         <MudTd DataLabel="StockQuantity">@context.StockQuantity</MudTd>
-        <MudTd DataLabel="CategoryId">@context.CategoryId</MudTd>
+        <MudTd DataLabel="Category">@context.Category?.Name</MudTd>
         <MudTd DataLabel="Actions">
+            <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                           aria-label="details"
+                           OnClick="() => OnProductDetail(context.Id)">
+            </MudIconButton>
             <MudIconButton 
-                Icon="@Icons.Material.Filled.Visibility" aria-label="edit"
+                Icon="@Icons.Material.Filled.Edit" aria-label="edit"
                 OnClick="() => OnEditProduct(context.Id)">
             </MudIconButton>
             <MudIconButton
@@ -95,6 +99,11 @@
     private void OnEditProduct(int id)
     {
         NavigationManager.NavigateTo($"editproduct/{id}");
+    }
+
+    private void OnProductDetail(int id)
+    {
+        NavigationManager.NavigateTo($"/productdetail/{id}");
     }
 
 

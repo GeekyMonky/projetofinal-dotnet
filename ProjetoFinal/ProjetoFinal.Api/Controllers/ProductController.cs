@@ -24,6 +24,7 @@ namespace ProjetoFinal.Api.Controllers
             var products = await _businessContext.Products
                 .Where(p => p.IsDeleted.Equals(false))
                 .Include(p => p.Images)
+                .Include(p => p.Category)
                 .ToListAsync();
 
             List<ProjetoFinal.Shared.Product> productList = new List<ProjetoFinal.Shared.Product>();
@@ -38,6 +39,11 @@ namespace ProjetoFinal.Api.Controllers
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
                     CategoryId = product.CategoryId,
+                    Category = product.Category != null ? new ProjetoFinal.Shared.Category
+                    {
+                        Id = product.Category.Id,
+                        Name = product.Category.Name
+                    } : null,
                     Images = product.Images?.Select(img => new ProjetoFinal.Shared.Image
                     {
                         Id = img.Id,
@@ -55,7 +61,10 @@ namespace ProjetoFinal.Api.Controllers
         [HttpGet("/products/{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
-            var product = await _businessContext.Products.FirstOrDefaultAsync(p => p.IsDeleted.Equals(false) && p.Id.Equals(id));
+            var product = await _businessContext.Products
+                .Include(p => p.Category)
+                .Include(p => p.Images)
+                .FirstOrDefaultAsync(p => p.IsDeleted.Equals(false) && p.Id.Equals(id));
 
             if (product is null)
             {
@@ -71,12 +80,21 @@ namespace ProjetoFinal.Api.Controllers
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
                     CategoryId = product.CategoryId,
+                    Category = product.Category != null ? new ProjetoFinal.Shared.Category
+                    {
+                        Id = product.Category.Id,
+                        Name = product.Category.Name
+                    } : null,
+                    Images = product.Images?.Select(img => new ProjetoFinal.Shared.Image
+                    {
+                        Id = img.Id,
+                        Url = img.Url,
+                        ProductId = img.ProductId
+                    }).ToList()
                 };
 
-                return Ok(product);
+                return Ok(productDto);
             }
-
-            
         }
 
         [HttpPost("/products")]
