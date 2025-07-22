@@ -12,13 +12,22 @@
     <HeaderContent>
         <MudTh>Quantity</MudTh>
         <MudTh>Date</MudTh>
-        <MudTh>Product Id</MudTh>
+        <MudTh>Product</MudTh>
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
-        <MudTd DataLabel="Date">@context.Date</MudTd>
-        <MudTd DataLabel="Product Id">@context.ProductId</MudTd>
+        <MudTd DataLabel="Date">@context.Date.ToString("dd/MM/yyyy")</MudTd>
+        <MudTd DataLabel="Product">
+            @if (context.Product != null)
+            {
+                <span>@context.Product.Name</span>
+            }
+            else
+            {
+                <span style="color: #999;">Product ID: @context.ProductId</span>
+            }
+        </MudTd>
         <MudTd DataLabel="Actions">
             <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="edit"
                            OnClick="() => OnEditStockMovement(context.Id)">
@@ -45,7 +54,7 @@
         {
             await LoadStockMovements();
         }
-        catch(Exception)
+        catch (Exception)
         {
             Message = "An error occurred while fetching stock movements.";
         }

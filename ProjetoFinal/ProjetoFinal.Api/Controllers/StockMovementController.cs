@@ -20,7 +20,10 @@ namespace ProjetoFinal.Api.Controllers
         [HttpGet("/stock-movements")]
         public async Task<IActionResult> GetStockMovements()
         {
-            var stockMovements = await _businessContext.StockMovements.Where(s => s.IsDeleted.Equals(false)).ToListAsync();
+            var stockMovements = await _businessContext.StockMovements
+                .Where(s => s.IsDeleted.Equals(false))
+                .Include(s => s.Product)
+                .ToListAsync();
 
             List<ProjetoFinal.Shared.StockMovement> stockMovementList = new List<ProjetoFinal.Shared.StockMovement>();
 
@@ -32,6 +35,15 @@ namespace ProjetoFinal.Api.Controllers
                     Quantity = stockMovement.Quantity,
                     Date = stockMovement.Date,
                     ProductId = stockMovement.ProductId,
+                    Product = stockMovement.Product != null ? new ProjetoFinal.Shared.Product
+                    {
+                        Id = stockMovement.Product.Id,
+                        Name = stockMovement.Product.Name,
+                        Description = stockMovement.Product.Description,
+                        Price = stockMovement.Product.Price,
+                        StockQuantity = stockMovement.Product.StockQuantity,
+                        CategoryId = stockMovement.Product.CategoryId
+                    } : null
                 };
 
                 stockMovementList.Add(stockMovementDto);
@@ -42,7 +54,9 @@ namespace ProjetoFinal.Api.Controllers
         [HttpGet("/stock-movements/{id}")]
         public async Task<IActionResult> GetStockMovement(int id)
         {
-            var stockMovement = await _businessContext.StockMovements.FirstOrDefaultAsync(s => s.IsDeleted.Equals(false) && s.Id.Equals(id));
+            var stockMovement = await _businessContext.StockMovements
+                .Include(s => s.Product)
+                .FirstOrDefaultAsync(s => s.IsDeleted.Equals(false) && s.Id.Equals(id));
 
             if (stockMovement is null)
             {
@@ -55,6 +69,15 @@ namespace ProjetoFinal.Api.Controllers
                 Quantity = stockMovement.Quantity,
                 Date = stockMovement.Date,
                 ProductId = stockMovement.ProductId,
+                Product = stockMovement.Product != null ? new ProjetoFinal.Shared.Product
+                {
+                    Id = stockMovement.Product.Id,
+                    Name = stockMovement.Product.Name,
+                    Description = stockMovement.Product.Description,
+                    Price = stockMovement.Product.Price,
+                    StockQuantity = stockMovement.Product.StockQuantity,
+                    CategoryId = stockMovement.Product.CategoryId
+                } : null
             };
 
             return Ok(stockMovementDto);
