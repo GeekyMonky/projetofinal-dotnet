@@ -18,63 +18,103 @@ else
     <h3>Add Product</h3>
 }
 
-
-<EditForm FormName="ProductForm" Model="Product" OnValidSubmit="OnAddProduct">
-    <div class="mb-3">
-        <label for="name" class="form-label">Name:</label>
-        <InputText id="name" class="form-control" placeholder="" @bind-Value="Product.Name" />
-    </div>
-    <div class="mb-3">
-        <label for="description" class="form-label">Description:</label>
-        <InputTextArea id="description" class="form-control" @bind-Value="Product.Description" />
-    </div>
-    <div class="mb-3">
-        <label for="price" class="form-label">Price:</label>
-        <InputNumber id="price" class="form-control" @bind-Value="Product.Price" />
-    </div>
-    @if (Id > 0)
-    {
-        <div class="mb-3">
-            <label class="form-label">Current Stock Quantity:</label>
-            <div class="form-control-plaintext">@Product.StockQuantity</div>
-            <small class="form-text text-muted">Stock quantity is managed through stock movements. <a href="/stock-movements">Manage stock movements</a></small>
+@if (_loadingCategories)
+{
+    <div class="d-flex justify-content-center my-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading categories...</span>
         </div>
-    }
-    <div class="mb-3">
-        <label for="category-id" class="form-label">Category Id:</label>
-        <InputNumber id="category-id" class="form-control" @bind-Value="Product.CategoryId" />
     </div>
-    @{
-        var buttonText = Id > 0 ? "Save" : "Add";
-    }
-    <button class="btn btn-primary" type="submit">@buttonText</button>
-</EditForm>
+}
+else
+{
+    <EditForm FormName="ProductForm" Model="Product" OnValidSubmit="OnAddProduct">
+        <div class="mb-3">
+            <label for="name" class="form-label">Name:</label>
+            <InputText id="name" class="form-control" placeholder="" @bind-Value="Product.Name" />
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description:</label>
+            <InputTextArea id="description" class="form-control" @bind-Value="Product.Description" />
+        </div>
+        <div class="mb-3">
+            <label for="price" class="form-label">Price:</label>
+            <InputNumber id="price" class="form-control" @bind-Value="Product.Price" />
+        </div>
+        @if (Id > 0)
+        {
+            <div class="mb-3">
+                <label class="form-label">Current Stock Quantity:</label>
+                <div class="form-control-plaintext">@Product.StockQuantity</div>
+                <small class="form-text text-muted">Stock quantity is managed through stock movements. <a href="/stock-movements">Manage stock movements</a></small>
+            </div>
+        }
+        <div class="mb-3">
+            <label for="category" class="form-label">Category:</label>
+            <InputSelect id="category" class="form-control" @bind-Value="Product.CategoryId">
+                <option value="0">-- Select a Category --</option>
+                @foreach (var category in Categories)
+                {
+                    <option value="@category.Id">@category.Name</option>
+                }
+            </InputSelect>
+            @if (Product.CategoryId == 0)
+            {
+                <small class="form-text text-danger">Please select a category.</small>
+            }
+        </div>
+        @{
+            var buttonText = Id > 0 ? "Save" : "Add";
+        }
+        <button class="btn btn-primary" type="submit" disabled="@(Product.CategoryId == 0)">@buttonText</button>
+    </EditForm>
+}
 
 @code {
 
     [Parameter]
     public int Id { get; set; }
     private Product Product { get; set; } = new();
+    private List<Category> Categories { get; set; } = new();
+    private bool _loadingCategories = true;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        if (Id > 0)
+        try
         {
-            try
+            // Load categories first
+            Categories = await ApiService.GetCategoriesAsync();
+            _loadingCategories = false;
+
+            if (Id > 0)
             {
-                Product = await ApiService.GetProductAsync(Id);
+                try
+                {
+                    Product = await ApiService.GetProductAsync(Id);
+                }
+                catch (Exception)
+                {
+                    Snackbar.Add("Failed to load product data.", Severity.Error);
+                }
             }
-            catch (Exception)
-            {
-                Snackbar.Add("Failed to load product data.", Severity.Error);
-            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load categories.", Severity.Error);
+            _loadingCategories = false;
         }
     }
 
     private async Task OnAddProduct()
     {
+        if (Product.CategoryId == 0)
+        {
+            Snackbar.Add("Please select a category.", Severity.Warning);
+            return;
+        }
+
         try
         {
             if (Id > 0)

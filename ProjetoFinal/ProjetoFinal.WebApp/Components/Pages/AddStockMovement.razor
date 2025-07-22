@@ -17,77 +17,137 @@ else
     <h3>Add Stock Movement</h3>
 }
 
-
-<EditForm FormName="StockMovementForm" Model="StockMovement" OnValidSubmit="OnAddStockMovement">
-    <div class="mb-3">
-        <label for="quantity" class="form-label">Quantity:</label>
-        <InputNumber id="quantity" class="form-control" placeholder="" @bind-Value="StockMovement.Quantity" />
+@if (_loadingProducts)
+{
+    <div class="d-flex justify-content-center my-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading products...</span>
+        </div>
     </div>
-    <div class="mb-3">
-        <label for="date" class="form-label">Date:</label>
-        <InputDate id="date" class="form-control" @bind-Value="StockMovement.Date" />
-    </div>
-    <div class="mb-3">
-        <label for="product-id" class="form-label">Product Id:</label>
-        <InputNumber id="product-id" class="form-control" @bind-Value="StockMovement.ProductId" />
-    </div>
-    @{
-        var buttonText = Id > 0 ? "Save" : "Add";
-    }
-    <button class="btn btn-primary" type="submit">@buttonText</button>
-</EditForm>
-@Message
-
+}
+else
+{
+    <EditForm FormName="StockMovementForm" Model="StockMovement" OnValidSubmit="OnAddStockMovement">
+        <div class="mb-3">
+            <label for="quantity" class="form-label">Quantity:</label>
+            <InputNumber id="quantity" class="form-control" placeholder="" @bind-Value="StockMovement.Quantity" />
+            <small class="form-text text-muted">Use positive numbers for stock increases (incoming inventory) and negative numbers for stock decreases (sales, waste, etc.)</small>
+        </div>
+        <div class="mb-3">
+            <label for="date" class="form-label">Date:</label>
+            <InputDate id="date" class="form-control" @bind-Value="StockMovement.Date" />
+        </div>
+        <div class="mb-3">
+            <label for="product" class="form-label">Product:</label>
+            <InputSelect id="product" class="form-control" @bind-Value="StockMovement.ProductId">
+                <option value="0">-- Select a Product --</option>
+                @foreach (var product in Products)
+                {
+                    <option value="@product.Id">@product.Name (Current Stock: @product.StockQuantity)</option>
+                }
+            </InputSelect>
+            @if (StockMovement.ProductId == 0)
+            {
+                <small class="form-text text-danger">Please select a product.</small>
+            }
+        </div>
+        @{
+            var buttonText = Id > 0 ? "Save" : "Add";
+        }
+        <button class="btn btn-primary" type="submit" disabled="@(StockMovement.ProductId == 0)">@buttonText</button>
+    </EditForm>
+}
 
 @code {
 
     [Parameter]
     public int Id { get; set; }
     private StockMovement StockMovement { get; set; } = new();
-    private string Message { get; set; } = string.Empty;
+    private List<Product> Products { get; set; } = new();
+    private bool _loadingProducts = true;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        if (Id > 0)
+        try
         {
-            StockMovement = await ApiService.GetStockMovementAsync(Id);
+            // Load products first
+            Products = await ApiService.GetProductsAsync();
+            _loadingProducts = false;
+
+            if (Id > 0)
+            {
+                try
+                {
+                    StockMovement = await ApiService.GetStockMovementAsync(Id);
+                }
+                catch (Exception)
+                {
+                    Snackbar.Add("Failed to load stock movement data.", Severity.Error);
+                }
+            }
+            else
+            {
+                // Set default date for new stock movements
+                StockMovement.Date = DateTime.Today;
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load products.", Severity.Error);
+            _loadingProducts = false;
         }
     }
 
     private async Task OnAddStockMovement()
     {
-        if (Id > 0)
+        if (StockMovement.ProductId == 0)
         {
-            var response = await ApiService.UpdateStockMovement(StockMovement);
-            if (response.IsSuccessStatusCode)
+            Snackbar.Add("Please select a product.", Severity.Warning);
+            return;
+        }
+
+        if (StockMovement.Quantity == 0)
+        {
+            Snackbar.Add("Please enter a quantity (positive for increases, negative for decreases).", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            if (Id > 0)
             {
-                Snackbar.Add("Stock movement updated successfully!", Severity.Success);
-                StockMovement = new();
+                var response = await ApiService.UpdateStockMovement(StockMovement);
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Stock movement updated successfully!", Severity.Success);
+                    StockMovement = new();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to update stock movement.", Severity.Error);
+                }
             }
             else
             {
-                Snackbar.Add("Failed to update stock movement.", Severity.Error);
+                var response = await ApiService.AddStockMovementAsync(StockMovement);
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Stock movement added successfully!", Severity.Success);
+                    StockMovement = new();
+                    StockMovement.Date = DateTime.Today; // Reset date to today for next entry
+                }
+                else
+                {
+                    Snackbar.Add("Failed to add stock movement.", Severity.Error);
+                }
             }
-
         }
-        else
+        catch (Exception ex)
         {
-            var response = await ApiService.AddStockMovementAsync(StockMovement);
-            if (response.IsSuccessStatusCode)
-            {
-                Snackbar.Add("Stock movement added successfully!", Severity.Success);
-                StockMovement = new();
-            }
-            else
-            {
-                Snackbar.Add("Failed to add stock movement.", Severity.Error);
-            }
+            Snackbar.Add($"Operation failed: {ex.Message}", Severity.Error);
         }
-
     }
-
-
 }
 

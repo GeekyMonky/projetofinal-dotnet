@@ -21,6 +21,13 @@ namespace ProjetoFinal.WebApp
         [Put("/products/{id}")]
         Task<HttpResponseMessage> DeleteProductAsync(int id);
 
+        //CATEGORIES
+        [Get("/categories")]
+        Task<List<Category>> GetCategoriesAsync();
+
+        [Get("/categories/{id}")]
+        Task<Category> GetCategoryAsync(int id);
+
         //STOCK MOVEMENTS
         [Get("/stock-movements")]
         Task<List<StockMovement>> GetStockMovementsAsync();
