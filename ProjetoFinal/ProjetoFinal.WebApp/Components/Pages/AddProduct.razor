@@ -1,5 +1,5 @@
-﻿@page "/addproduct"
-@page "/editproduct/{Id:int}"
+﻿@page "/add-product"
+@page "/edit-product/{Id:int}"
 @inject IApiService ApiService
 @using ProjetoFinal.Shared
 @rendermode InteractiveServer
@@ -39,7 +39,7 @@ else
         <label for="category-id" class="form-label">Category Id:</label>
         <InputNumber id="category-id" class="form-control" @bind-Value="Product.CategoryId" />
     </div>
-    @{ var buttonText = Id > 0 ? "Edit" : "Add"; }
+    @{ var buttonText = Id > 0 ? "Save" : "Add"; }
     <button class="btn btn-primary" type="submit">@buttonText</button>
 </EditForm>
 @Message

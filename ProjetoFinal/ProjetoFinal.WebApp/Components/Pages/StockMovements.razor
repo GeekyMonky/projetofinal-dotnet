@@ -1,0 +1,81 @@
+﻿@page "/stock-movements"
+@using ProjetoFinal.Shared
+@inject IApiService ApiService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
+<h3>Stock Movements</h3>
+<h3>@Message</h3>
+
+<MudTable Items="stockMovements" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+    <HeaderContent>
+        <MudTh>Quantity</MudTh>
+        <MudTh>Date</MudTh>
+        <MudTh>Product Id</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+        <MudTd DataLabel="Date">@context.Date</MudTd>
+        <MudTd DataLabel="Product Id">@context.ProductId</MudTd>
+        <MudTd DataLabel="Actions">
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="edit"
+                           OnClick="() => OnEditStockMovement(context.Id)">
+            </MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete"
+                           OnClick="() => OnStockMovementDelete(context.Id)">   
+            </MudIconButton>
+            </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code{
+    private string Message { get; set; } = string.Empty;
+
+    private List<StockMovement> stockMovements { get; set; } = new();
+
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            await LoadStockMovements();
+        }
+        catch(Exception)
+        {
+            Message = "An error occurred while fetching stock movements.";
+        }
+    }
+
+    private async Task LoadStockMovements()
+    {
+        stockMovements = await ApiService.GetStockMovementsAsync();
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async void OnStockMovementDelete(int id)
+    {
+        var response = await ApiService.DeleteStockMovementAsync(id);
+        if(response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Stock movement deleted successfully.", Severity.Success);
+            await LoadStockMovements();
+        }
+        else
+        {
+            Snackbar.Add("Failed to delete stock movement.", Severity.Error);
+            return;
+        }
+    }
+
+    private void OnEditStockMovement(int id)
+    {
+        NavigationManager.NavigateTo($"/edit-stock-movement/{id}");
+    }
+}
+

@@ -5,6 +5,7 @@ namespace ProjetoFinal.WebApp
 {
     public interface IApiService
     {
+        //PRODUCTS
         [Get("/products")]
         Task<List<Product>> GetProductsAsync();
 
@@ -20,6 +21,21 @@ namespace ProjetoFinal.WebApp
         [Put("/products/{id}")]
         Task<HttpResponseMessage> DeleteProductAsync(int id);
 
+        //STOCK MOVEMENTS
+        [Get("/stock-movements")]
+        Task<List<StockMovement>> GetStockMovementsAsync();
+
+        [Get("/stock-movements/{id}")]
+        Task<StockMovement> GetStockMovementAsync(int id);
+
+        [Post("/stock-movements")]
+        Task<HttpResponseMessage> AddStockMovementAsync([Body] StockMovement stockMovement);
+
+        [Put("/stock-movements")]
+        Task<HttpResponseMessage> UpdateStockMovement([Body] StockMovement stockMovement);
+
+        [Put("/stock-movements/{id}")]
+        Task<HttpResponseMessage> DeleteStockMovementAsync(int id);
 
     }
 }

@@ -16,6 +16,6 @@ namespace ProjetoFinal.BusinessContext.Entities
         public int Quantity { get; set; }
         public DateTime Date { get; set; }
         public int ProductId { get; set; }
-        public Product Product { get; set; }
+        public Product? Product { get; set; }
     }
 }

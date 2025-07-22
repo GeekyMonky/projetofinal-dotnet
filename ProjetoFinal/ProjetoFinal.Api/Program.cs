@@ -9,7 +9,6 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<IBusinessContext, BusinessContext>();
-    
 
 var app = builder.Build();
 
