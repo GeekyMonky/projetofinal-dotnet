@@ -91,27 +91,48 @@ namespace ProjetoFinal.Api.Controllers
                 return BadRequest("Stock movement data is required.");
             }
 
-            var newStockMovement = new BusinessContext.Entities.StockMovement
+            try
             {
-                Quantity = stockMovement.Quantity,
-                Date = stockMovement.Date,
-                ProductId = stockMovement.ProductId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-            };
-            _businessContext.StockMovements.Add(newStockMovement);
+                // Find the product first
+                var product = await _businessContext.Products
+                    .FirstOrDefaultAsync(p => p.Id == stockMovement.ProductId && !p.IsDeleted);
+                
+                if (product == null)
+                {
+                    return BadRequest("Product not found.");
+                }
 
-            var result = await _businessContext.SaveChangesAsync(true);
+                var newStockMovement = new BusinessContext.Entities.StockMovement
+                {
+                    Quantity = stockMovement.Quantity,
+                    Date = stockMovement.Date,
+                    ProductId = stockMovement.ProductId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                };
+                _businessContext.StockMovements.Add(newStockMovement);
 
-            if (result > 0)
-            {
-                return Ok();
+                // Update product stock quantity
+                product.StockQuantity += stockMovement.Quantity;
+                product.UpdatedAt = DateTime.UtcNow;
+
+                var result = await _businessContext.SaveChangesAsync(true);
+
+                if (result > 0)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while adding the stock movement.");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while adding the stock movement.");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while adding the stock movement: {ex.Message}");
             }
         }
+
         [HttpPut("/stock-movements")]
         public async Task<IActionResult> UpdateStockMovement([FromBody] ProjetoFinal.Shared.StockMovement stockMovement)
         {
@@ -120,52 +141,100 @@ namespace ProjetoFinal.Api.Controllers
                 return BadRequest("Invalid stock movement data.");
             }
 
-            var existingStockMovement = await _businessContext.StockMovements.FindAsync(stockMovement.Id);
-
-            if (existingStockMovement == null || existingStockMovement.IsDeleted)
+            try
             {
-                return NotFound("Stock movement not found.");
+                var existingStockMovement = await _businessContext.StockMovements.FindAsync(stockMovement.Id);
+
+                if (existingStockMovement == null || existingStockMovement.IsDeleted)
+                {
+                    return NotFound("Stock movement not found.");
+                }
+
+                // Find the old and new products
+                var oldProduct = await _businessContext.Products
+                    .FirstOrDefaultAsync(p => p.Id == existingStockMovement.ProductId && !p.IsDeleted);
+                var newProduct = await _businessContext.Products
+                    .FirstOrDefaultAsync(p => p.Id == stockMovement.ProductId && !p.IsDeleted);
+
+                if (oldProduct == null || newProduct == null)
+                {
+                    return BadRequest("Product not found.");
+                }
+
+                // Revert the old stock movement from the old product
+                oldProduct.StockQuantity -= existingStockMovement.Quantity;
+                oldProduct.UpdatedAt = DateTime.UtcNow;
+
+                // Apply the new stock movement to the new product
+                newProduct.StockQuantity += stockMovement.Quantity;
+                newProduct.UpdatedAt = DateTime.UtcNow;
+
+                // Update the stock movement
+                existingStockMovement.Quantity = stockMovement.Quantity;
+                existingStockMovement.Date = stockMovement.Date;
+                existingStockMovement.ProductId = stockMovement.ProductId;
+                existingStockMovement.UpdatedAt = DateTime.UtcNow;
+
+                var result = await _businessContext.SaveChangesAsync(true);
+
+                if (result > 0)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while updating the stock movement.");
+                }
             }
-
-            existingStockMovement.Quantity = stockMovement.Quantity;
-            existingStockMovement.Date = stockMovement.Date;
-            existingStockMovement.ProductId = stockMovement.ProductId;
-            existingStockMovement.UpdatedAt = DateTime.UtcNow;
-
-            var result = await _businessContext.SaveChangesAsync(true);
-
-            if (result > 0)
+            catch (Exception ex)
             {
-                return Ok();
-            }
-            else
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while updating the stock movement.");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while updating the stock movement: {ex.Message}");
             }
         }
 
         [HttpPut("/stock-movements/{id}")]
         public async Task<IActionResult> DeleteStockMovement(int id)
         {
-            var existingStockMovement = await _businessContext.StockMovements.FindAsync(id);
-
-            if (existingStockMovement == null || existingStockMovement.IsDeleted)
+            try
             {
-                return NotFound("Stock movement not found.");
+                var existingStockMovement = await _businessContext.StockMovements.FindAsync(id);
+
+                if (existingStockMovement == null || existingStockMovement.IsDeleted)
+                {
+                    return NotFound("Stock movement not found.");
+                }
+
+                // Find the product and revert the stock movement
+                var product = await _businessContext.Products
+                    .FirstOrDefaultAsync(p => p.Id == existingStockMovement.ProductId && !p.IsDeleted);
+                
+                if (product == null)
+                {
+                    return BadRequest("Product not found.");
+                }
+
+                // Revert the stock movement from the product
+                product.StockQuantity -= existingStockMovement.Quantity;
+                product.UpdatedAt = DateTime.UtcNow;
+
+                // Mark stock movement as deleted
+                existingStockMovement.IsDeleted = true;
+                existingStockMovement.UpdatedAt = DateTime.UtcNow;
+
+                var result = await _businessContext.SaveChangesAsync(true);
+
+                if (result > 0)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while deleting the stock movement.");
+                }
             }
-
-            existingStockMovement.IsDeleted = true;
-            existingStockMovement.UpdatedAt = DateTime.UtcNow;
-
-            var result = await _businessContext.SaveChangesAsync(true);
-
-            if (result > 0)
+            catch (Exception ex)
             {
-                return Ok();
-            }
-            else
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while deleting the stock movement.");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while deleting the stock movement: {ex.Message}");
             }
         }
     }
