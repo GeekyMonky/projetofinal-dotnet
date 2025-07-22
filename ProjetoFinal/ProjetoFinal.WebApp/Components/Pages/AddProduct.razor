@@ -32,10 +32,14 @@ else
         <label for="price" class="form-label">Price:</label>
         <InputNumber id="price" class="form-control" @bind-Value="Product.Price" />
     </div>
-    <div class="mb-3">
-        <label for="stock-quantity" class="form-label">Stock Quantity:</label>
-        <InputNumber id="stock-quantity" class="form-control" @bind-Value="Product.StockQuantity" />
-    </div>
+    @if (Id > 0)
+    {
+        <div class="mb-3">
+            <label class="form-label">Current Stock Quantity:</label>
+            <div class="form-control-plaintext">@Product.StockQuantity</div>
+            <small class="form-text text-muted">Stock quantity is managed through stock movements. <a href="/stock-movements">Manage stock movements</a></small>
+        </div>
+    }
     <div class="mb-3">
         <label for="category-id" class="form-label">Category Id:</label>
         <InputNumber id="category-id" class="form-control" @bind-Value="Product.CategoryId" />
@@ -62,7 +66,7 @@ else
             {
                 Product = await ApiService.GetProductAsync(Id);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Snackbar.Add("Failed to load product data.", Severity.Error);
             }
@@ -82,7 +86,7 @@ else
                     Name = Product.Name,
                     Description = Product.Description,
                     Price = Product.Price,
-                    StockQuantity = Product.StockQuantity,
+                    StockQuantity = Product.StockQuantity, // Keep existing stock quantity for updates
                     CategoryId = Product.CategoryId,
                     // Explicitly set navigation properties to null
                     Category = null,
@@ -105,13 +109,13 @@ else
             }
             else
             {
-                // For new products, also ensure navigation properties are null
+                // For new products, set initial stock quantity to 0
                 var productToAdd = new Product
                 {
                     Name = Product.Name,
                     Description = Product.Description,
                     Price = Product.Price,
-                    StockQuantity = Product.StockQuantity,
+                    StockQuantity = 0, // Always start with 0 for new products
                     CategoryId = Product.CategoryId,
                     Category = null,
                     Images = null,
@@ -122,7 +126,7 @@ else
 
                 if (response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Product added successfully!", Severity.Success);
+                    Snackbar.Add("Product added successfully! Add stock movements to set initial inventory.", Severity.Success);
                     Product = new();
                 }
                 else
