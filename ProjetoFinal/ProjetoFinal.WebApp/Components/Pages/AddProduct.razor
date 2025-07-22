@@ -4,11 +4,12 @@
 @using ProjetoFinal.Shared
 @rendermode InteractiveServer
 @inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 
 @* Needed for snackbars *@
 <MudSnackbarProvider />
 
-@if(Id > 0)
+@if (Id > 0)
 {
     <h3>Edit Product</h3>
 }
@@ -39,18 +40,17 @@ else
         <label for="category-id" class="form-label">Category Id:</label>
         <InputNumber id="category-id" class="form-control" @bind-Value="Product.CategoryId" />
     </div>
-    @{ var buttonText = Id > 0 ? "Save" : "Add"; }
+    @{
+        var buttonText = Id > 0 ? "Save" : "Add";
+    }
     <button class="btn btn-primary" type="submit">@buttonText</button>
 </EditForm>
-@Message
-
 
 @code {
 
     [Parameter]
     public int Id { get; set; }
     private Product Product { get; set; } = new();
-    private string Message { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -58,41 +58,82 @@ else
 
         if (Id > 0)
         {
-            Product = await ApiService.GetProductAsync(Id);
+            try
+            {
+                Product = await ApiService.GetProductAsync(Id);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add("Failed to load product data.", Severity.Error);
+            }
         }
     }
 
     private async Task OnAddProduct()
     {
-        if (Id > 0)
+        try
         {
-            var response = await ApiService.UpdateProduct(Product);
-            if (response.IsSuccessStatusCode)
+            if (Id > 0)
             {
-                Snackbar.Add("Product updated successfully!", Severity.Success);
-                Product = new();
+                // Create a clean product object without navigation properties
+                var productToUpdate = new Product
+                {
+                    Id = Id,
+                    Name = Product.Name,
+                    Description = Product.Description,
+                    Price = Product.Price,
+                    StockQuantity = Product.StockQuantity,
+                    CategoryId = Product.CategoryId,
+                    // Explicitly set navigation properties to null
+                    Category = null,
+                    Images = null,
+                    StockMovements = null
+                };
+
+                var response = await ApiService.UpdateProduct(productToUpdate);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Product updated successfully!", Severity.Success);
+                    await Task.Delay(1000); // Brief delay to show success message
+                    NavigationManager.NavigateTo("/products");
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to update product. Status: {response.StatusCode}", Severity.Error);
+                }
             }
             else
             {
-                Snackbar.Add("Failed to update product.", Severity.Error);
-            }
+                // For new products, also ensure navigation properties are null
+                var productToAdd = new Product
+                {
+                    Name = Product.Name,
+                    Description = Product.Description,
+                    Price = Product.Price,
+                    StockQuantity = Product.StockQuantity,
+                    CategoryId = Product.CategoryId,
+                    Category = null,
+                    Images = null,
+                    StockMovements = null
+                };
 
+                var response = await ApiService.AddProductAsync(productToAdd);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Product added successfully!", Severity.Success);
+                    Product = new();
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to add product. Status: {response.StatusCode}", Severity.Error);
+                }
+            }
         }
-        else
+        catch (Exception ex)
         {
-            var response = await ApiService.AddProductAsync(Product);
-            if (response.IsSuccessStatusCode)
-            {
-                Snackbar.Add("Product added successfully!", Severity.Success);
-                Product = new();
-            }
-            else
-            {
-                Snackbar.Add("Failed to add product.", Severity.Error);
-            }
+            Snackbar.Add($"Operation failed: {ex.Message}", Severity.Error);
         }
-
     }
-
-
 }
