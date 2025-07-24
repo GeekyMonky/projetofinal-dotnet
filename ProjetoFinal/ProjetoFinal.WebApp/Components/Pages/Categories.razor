@@ -1,0 +1,76 @@
+﻿@page "/categories"
+@using ProjetoFinal.Shared
+@inject IApiService ApiService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
+<h3>Categories</h3>
+<h3>@Message</h3>
+
+<MudTable Items="categories" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Actions">
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="edit"
+                           OnClick="() => OnEditCategory(context.Id)">
+            </MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete"
+                           OnClick="() => OnCategoryDelete(context.Id)">   
+            </MudIconButton>
+            </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code{
+    private string Message { get; set; } = string.Empty;
+
+    private List<Category> categories { get; set; } = new();
+
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            await LoadCategories();
+        }
+        catch (Exception)
+        {
+            Message = "An error occurred while fetching categories.";
+        }
+    }
+
+    private async Task LoadCategories()
+    {
+        categories = await ApiService.GetCategoriesAsync();
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async void OnCategoryDelete(int id)
+    {
+        var response = await ApiService.DeleteCategoryAsync(id);
+        if(response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Category deleted successfully.", Severity.Success);
+            await LoadCategories();
+        }
+        else
+        {
+            Snackbar.Add("Failed to delete category.", Severity.Error);
+            return;
+        }
+    }
+
+    private void OnEditCategory(int id)
+    {
+        NavigationManager.NavigateTo($"/edit-category/{id}");
+    }
+}

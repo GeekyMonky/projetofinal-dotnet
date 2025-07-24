@@ -1,37 +1,68 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">IMS</a>
+﻿@rendermode InteractiveServer
+
+<nav class="navbar navbar-dark bg-dark w-100" style="padding: 0.5rem 1rem;">
+    <div class="w-100 d-flex justify-content-center">
+        <ul class="nav-items-horizontal">
+            <li>
+                <NavLink href="" Match="NavLinkMatch.All">
+                    <span class="bi bi-house-door-fill" aria-hidden="true"></span> Home
+                </NavLink>
+            </li>
+            <li>
+                <NavLink href="products">
+                    <span class="bi bi-list-nested" aria-hidden="true"></span> Products
+                </NavLink>
+            </li>
+            <li>
+                <NavLink href="categories">
+                    <span class="bi bi-list-nested" aria-hidden="true"></span> Categories
+                </NavLink>
+            </li>
+            <li>
+                <NavLink href="stock-movements">
+                    <span class="bi bi-list-nested" aria-hidden="true"></span> Stock Movements
+                </NavLink>
+            </li>
+            <li class="dropdown-container">
+                <button type="button" class="dropdown-toggle-btn" @onclick="ToggleAddItemsCollapse">
+                    <span class="bi bi-plus-square-fill" aria-hidden="true"></span> Add Items
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu @(_addItemsCollapsed ? "hidden" : "show")">
+                    <li>
+                        <NavLink href="add-category" @onclick="CloseDropdown">
+                            <span class="bi bi-tag-fill" aria-hidden="true"></span> Add Category
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink href="add-product" @onclick="CloseDropdown">
+                            <span class="bi bi-box" aria-hidden="true"></span> Add Product
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink href="add-stock-movement" @onclick="CloseDropdown">
+                            <span class="bi bi-arrow-up-down" aria-hidden="true"></span> Add Stock Movement
+                        </NavLink>
+                    </li>
+                </ul>
+            </li>
+        </ul>
     </div>
-</div>
+    
+    <!-- Brand positioned absolutely -->
+    <a class="navbar-brand" href="" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);">IMS</a>
+</nav>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+@code {
+    private bool _addItemsCollapsed = true;
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="products">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Products
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="stock-movements">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Stock Movements
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="add-product">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Add Product
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="add-stock-movement">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Add Stock Movement
-            </NavLink>
-        </div>
-    </nav>
-</div>
+    private void ToggleAddItemsCollapse()
+    {
+        _addItemsCollapsed = !_addItemsCollapsed;
+    }
+
+    private void CloseDropdown()
+    {
+        _addItemsCollapsed = true;
+    }
+}

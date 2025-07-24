@@ -28,6 +28,15 @@ namespace ProjetoFinal.WebApp
         [Get("/categories/{id}")]
         Task<Category> GetCategoryAsync(int id);
 
+        [Post("/categories")]
+        Task<HttpResponseMessage> AddCategoryAsync([Body] Category category);
+
+        [Put("/categories")]
+        Task<HttpResponseMessage> UpdateCategoryAsync([Body] Category category);
+
+        [Put("/categories/{id}")]
+        Task<HttpResponseMessage> DeleteCategoryAsync(int id);
+
         //STOCK MOVEMENTS
         [Get("/stock-movements")]
         Task<List<StockMovement>> GetStockMovementsAsync();

@@ -1,0 +1,118 @@
+﻿@page "/add-category"
+@page "/edit-category/{Id:int}"
+@inject IApiService ApiService
+@using ProjetoFinal.Shared
+@rendermode InteractiveServer
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+
+@if (Id > 0)
+{
+    <h3>Edit Category</h3>
+}
+else
+{
+    <h3>Add Category</h3>
+}
+
+<EditForm FormName="CategoryForm" Model="Category" OnValidSubmit="OnAddCategory">
+    <div class="mb-3">
+        <label for="name" class="form-label">Name:</label>
+        <InputText id="name" class="form-control" placeholder="Enter category name" @bind-Value="Category.Name" />
+        @if (string.IsNullOrWhiteSpace(Category.Name))
+        {
+            <small class="form-text text-danger">Please enter a category name.</small>
+        }
+    </div>
+    @{
+        var buttonText = Id > 0 ? "Save" : "Add";
+    }
+    <button class="btn btn-primary" type="submit" disabled="@(string.IsNullOrWhiteSpace(Category.Name))">@buttonText</button>
+    <a href="/categories" class="btn btn-secondary ms-2">Cancel</a>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private Category Category { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (Id > 0)
+        {
+            try
+            {
+                Category = await ApiService.GetCategoryAsync(Id);
+            }
+            catch (Exception)
+            {
+                Snackbar.Add("Failed to load category data.", Severity.Error);
+            }
+        }
+    }
+
+    private async Task OnAddCategory()
+    {
+        if (string.IsNullOrWhiteSpace(Category.Name))
+        {
+            Snackbar.Add("Please enter a category name.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            if (Id > 0)
+            {
+                // Create a clean category object without navigation properties
+                var categoryToUpdate = new Category
+                {
+                    Id = Id,
+                    Name = Category.Name.Trim(),
+                    Products = null
+                };
+
+                var response = await ApiService.UpdateCategoryAsync(categoryToUpdate);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Category updated successfully!", Severity.Success);
+                    await Task.Delay(1000); // Brief delay to show success message
+                    NavigationManager.NavigateTo("/categories");
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to update category. Status: {response.StatusCode}", Severity.Error);
+                }
+            }
+            else
+            {
+                var categoryToAdd = new Category
+                {
+                    Name = Category.Name.Trim(),
+                    Products = null
+                };
+
+                var response = await ApiService.AddCategoryAsync(categoryToAdd);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Category added successfully!", Severity.Success);
+                    Category = new(); // Reset the form
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to add category. Status: {response.StatusCode}", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Operation failed: {ex.Message}", Severity.Error);
+        }
+    }
+}
