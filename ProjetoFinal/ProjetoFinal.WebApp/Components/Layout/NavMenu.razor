@@ -1,68 +1,74 @@
-﻿@rendermode InteractiveServer
-
-<nav class="navbar navbar-dark bg-dark w-100" style="padding: 0.5rem 1rem;">
-    <div class="w-100 d-flex justify-content-center">
-        <ul class="nav-items-horizontal">
+﻿<nav class="navbar navbar-dark bg-dark w-100" style="padding: 0.5rem 1rem; position: relative; overflow: visible !important;">
+    <div class="w-100 d-flex justify-content-center" style="overflow: visible !important;">
+        <ul class="nav-items-horizontal" style="overflow: visible !important;">
             <li>
                 <NavLink href="" Match="NavLinkMatch.All">
-                    <span class="bi bi-house-door-fill" aria-hidden="true"></span> Home
+                    Home
                 </NavLink>
             </li>
-            <li>
-                <NavLink href="products">
-                    <span class="bi bi-list-nested" aria-hidden="true"></span> Products
-                </NavLink>
-            </li>
-            <li>
-                <NavLink href="categories">
-                    <span class="bi bi-list-nested" aria-hidden="true"></span> Categories
-                </NavLink>
-            </li>
-            <li>
-                <NavLink href="stock-movements">
-                    <span class="bi bi-list-nested" aria-hidden="true"></span> Stock Movements
-                </NavLink>
-            </li>
-            <li class="dropdown-container">
-                <button type="button" class="dropdown-toggle-btn" @onclick="ToggleAddItemsCollapse">
-                    <span class="bi bi-plus-square-fill" aria-hidden="true"></span> Add Items
+            <li class="dropdown-hover" style="position: relative; overflow: visible !important;">
+                <button type="button" class="dropdown-toggle-btn">
+                    View/Manage
                     <span class="dropdown-arrow">▼</span>
                 </button>
-                <ul class="dropdown-menu @(_addItemsCollapsed ? "hidden" : "show")">
-                    <li>
-                        <NavLink href="add-category" @onclick="CloseDropdown">
-                            <span class="bi bi-tag-fill" aria-hidden="true"></span> Add Category
+                
+                <div class="dropdown-menu-hover view-manage-dropdown">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
+                        <NavLink href="products" class="view-manage-item">
+                            <span class="bi bi-box-seam"></span>
+                            <span>Products</span>
                         </NavLink>
-                    </li>
-                    <li>
-                        <NavLink href="add-product" @onclick="CloseDropdown">
-                            <span class="bi bi-box" aria-hidden="true"></span> Add Product
+                        <NavLink href="categories" class="view-manage-item">
+                            <span class="bi bi-tags"></span>
+                            <span>Categories</span>
                         </NavLink>
-                    </li>
-                    <li>
-                        <NavLink href="add-stock-movement" @onclick="CloseDropdown">
-                            <span class="bi bi-arrow-up-down" aria-hidden="true"></span> Add Stock Movement
+                        <NavLink href="stock-movements" class="view-manage-item">
+                            <span class="bi bi-clipboard-data"></span>
+                            <span>Stock Movements</span>
                         </NavLink>
-                    </li>
-                </ul>
+                    </div>
+                </div>
+            </li>
+            <li class="dropdown-hover" style="position: relative; overflow: visible !important;">
+                <button type="button" class="dropdown-toggle-btn">
+                    Create
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                
+                <div class="dropdown-menu-hover">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1rem;">
+                        <NavLink href="add-category" class="workflow-item">
+                            <span class="bi bi-tag-fill"></span>
+                            <span>Add Category</span>
+                        </NavLink>
+                        <div class="workflow-arrow">
+                            <span class="bi bi-arrow-right"></span>
+                        </div>
+                        <NavLink href="add-product" class="workflow-item">
+                            <span class="bi bi-box"></span>
+                            <span>Add Product</span>
+                        </NavLink>
+                        <div class="workflow-arrow">
+                            <span class="bi bi-arrow-right"></span>
+                        </div>
+                        <NavLink href="add-stock-movement" class="workflow-item">
+                            <span class="bi bi-clipboard-plus"></span>
+                            <span>Add Stock Movement</span>
+                        </NavLink>
+                    </div>
+                    <div class="workflow-legend">
+                        <span class="legend-text">(Proper workflow)</span>
+                    </div>
+                </div>
             </li>
         </ul>
     </div>
     
-    <!-- Brand positioned absolutely -->
-    <a class="navbar-brand" href="" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);">IMS</a>
-</nav>
-
-@code {
-    private bool _addItemsCollapsed = true;
-
-    private void ToggleAddItemsCollapse()
-    {
-        _addItemsCollapsed = !_addItemsCollapsed;
-    }
-
-    private void CloseDropdown()
-    {
-        _addItemsCollapsed = true;
-    }
-}
+    <!-- Left Brand positioned absolutely - EASTER EGG: Redirects to Stock Up page -->
+    <NavLink href="stock-up" class="navbar-brand ims-logo-container" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);">
+        <div class="ims-logo">
+            <span id="crosshair-element" class="bi bi-crosshair crosshair-random" aria-hidden="true"></span>
+            <span class="bi bi-box box-fixed" aria-hidden="true"></span>
+        </div>
+    </NavLink>
+    </nav>
