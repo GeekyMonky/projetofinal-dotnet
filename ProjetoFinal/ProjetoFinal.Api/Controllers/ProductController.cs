@@ -23,7 +23,7 @@ namespace ProjetoFinal.Api.Controllers
         {
             var products = await _businessContext.Products
                 .Where(p => p.IsDeleted.Equals(false))
-                .Include(p => p.Images)
+                .Include(p => p.Images.Where(i => !i.IsDeleted))
                 .Include(p => p.Category)
                 .ToListAsync();
 
@@ -44,7 +44,7 @@ namespace ProjetoFinal.Api.Controllers
                         Id = product.Category.Id,
                         Name = product.Category.Name
                     } : null,
-                    Images = product.Images?.Select(img => new ProjetoFinal.Shared.Image
+                    Images = product.Images?.Where(i => !i.IsDeleted).Select(img => new ProjetoFinal.Shared.Image
                     {
                         Id = img.Id,
                         Url = img.Url,
@@ -63,7 +63,7 @@ namespace ProjetoFinal.Api.Controllers
         {
             var product = await _businessContext.Products
                 .Include(p => p.Category)
-                .Include(p => p.Images)
+                .Include(p => p.Images.Where(i => !i.IsDeleted))
                 .FirstOrDefaultAsync(p => p.IsDeleted.Equals(false) && p.Id.Equals(id));
 
             if (product is null)
@@ -85,7 +85,7 @@ namespace ProjetoFinal.Api.Controllers
                         Id = product.Category.Id,
                         Name = product.Category.Name
                     } : null,
-                    Images = product.Images?.Select(img => new ProjetoFinal.Shared.Image
+                    Images = product.Images?.Where(i => !i.IsDeleted).Select(img => new ProjetoFinal.Shared.Image
                     {
                         Id = img.Id,
                         Url = img.Url,
@@ -120,7 +120,8 @@ namespace ProjetoFinal.Api.Controllers
 
             if (result > 0)
             {
-                return Ok(result);
+                // Return the product ID so images can be uploaded to it
+                return Ok(new { ProductId = newProduct.Id });
             }
             else 
             {

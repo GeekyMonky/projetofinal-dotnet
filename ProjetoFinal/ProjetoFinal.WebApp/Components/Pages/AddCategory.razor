@@ -30,7 +30,13 @@ else
     @{
         var buttonText = Id > 0 ? "Save" : "Add";
     }
-    <button class="btn btn-primary" type="submit" disabled="@(string.IsNullOrWhiteSpace(Category.Name))">@buttonText</button>
+    <button class="btn btn-primary" type="submit" disabled="@(string.IsNullOrWhiteSpace(Category.Name) || _isSubmitting)">
+        @if (_isSubmitting)
+        {
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        }
+        @buttonText Category
+    </button>
     <a href="/categories" class="btn btn-secondary ms-2">Cancel</a>
 </EditForm>
 
@@ -38,6 +44,7 @@ else
     [Parameter]
     public int Id { get; set; }
     private Category Category { get; set; } = new();
+    private bool _isSubmitting = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -48,6 +55,7 @@ else
             try
             {
                 Category = await ApiService.GetCategoryAsync(Id);
+                StateHasChanged();
             }
             catch (Exception)
             {
@@ -63,6 +71,9 @@ else
             Snackbar.Add("Please enter a category name.", Severity.Warning);
             return;
         }
+
+        _isSubmitting = true;
+        StateHasChanged();
 
         try
         {
@@ -103,6 +114,7 @@ else
                 {
                     Snackbar.Add("Category added successfully!", Severity.Success);
                     Category = new(); // Reset the form
+                    StateHasChanged();
                 }
                 else
                 {
@@ -113,6 +125,11 @@ else
         catch (Exception ex)
         {
             Snackbar.Add($"Operation failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+            StateHasChanged();
         }
     }
 }

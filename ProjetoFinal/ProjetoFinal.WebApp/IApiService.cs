@@ -21,6 +21,14 @@ namespace ProjetoFinal.WebApp
         [Put("/products/{id}")]
         Task<HttpResponseMessage> DeleteProductAsync(int id);
 
+        //IMAGES
+        [Multipart]
+        [Post("/products/{productId}/images")]
+        Task<HttpResponseMessage> UploadProductImageAsync(int productId, [AliasAs("file")] StreamPart file);
+
+        [Delete("/images/{imageId}")]
+        Task<HttpResponseMessage> DeleteImageAsync(int imageId);
+
         //CATEGORIES
         [Get("/categories")]
         Task<List<Category>> GetCategoriesAsync();
@@ -52,6 +60,5 @@ namespace ProjetoFinal.WebApp
 
         [Put("/stock-movements/{id}")]
         Task<HttpResponseMessage> DeleteStockMovementAsync(int id);
-
     }
 }
