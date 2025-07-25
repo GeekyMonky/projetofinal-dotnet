@@ -8,7 +8,7 @@
 <h3>Categories</h3>
 <h3>@Message</h3>
 
-<MudTable Items="categories" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+<MudTable Items="categories" Hover="true" Breakpoint="Breakpoint.Sm">
     <HeaderContent>
         <MudTh>Name</MudTh>
         <MudTh>Actions</MudTh>
@@ -31,8 +31,6 @@
 
     private List<Category> categories { get; set; } = new();
 
-    private bool _loading = true;
-
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -50,7 +48,6 @@
     private async Task LoadCategories()
     {
         categories = await ApiService.GetCategoriesAsync();
-        _loading = false;
         StateHasChanged();
     }
 

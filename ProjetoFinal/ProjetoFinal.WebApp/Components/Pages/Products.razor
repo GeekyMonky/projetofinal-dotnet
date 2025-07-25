@@ -8,15 +8,62 @@
 <h3>Products</h3>
 <h3>@Message</h3>
 
-
-<MudTable Items="ProductList" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+<MudTable Items="SortedProductList" Hover="true" Breakpoint="Breakpoint.Sm">
     <HeaderContent>
         <MudTh>Image</MudTh>
-        <MudTh>Name</MudTh>
+        <MudTh Style="cursor: pointer;" @onclick="() => SortBy(nameof(Product.Name))">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                Name
+                @if (_currentSortColumn == nameof(Product.Name))
+                {
+                    <MudIcon Icon="@(_sortAscending ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)" Size="Size.Small" />
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.UnfoldMore" Size="Size.Small" Style="opacity: 0.5;" />
+                }
+            </div>
+        </MudTh>
         <MudTh>Description</MudTh>
-        <MudTh>Price</MudTh>
-        <MudTh>Stock Quantity</MudTh>
-        <MudTh>Category</MudTh>
+        <MudTh Style="cursor: pointer;" @onclick="() => SortBy(nameof(Product.Price))">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                Price (€)
+                @if (_currentSortColumn == nameof(Product.Price))
+                {
+                    <MudIcon Icon="@(_sortAscending ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)" Size="Size.Small" />
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.UnfoldMore" Size="Size.Small" Style="opacity: 0.5;" />
+                }
+            </div>
+        </MudTh>
+        <MudTh Style="cursor: pointer;" @onclick="() => SortBy(nameof(Product.StockQuantity))">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                Stock Quantity
+                @if (_currentSortColumn == nameof(Product.StockQuantity))
+                {
+                    <MudIcon Icon="@(_sortAscending ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)" Size="Size.Small" />
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.UnfoldMore" Size="Size.Small" Style="opacity: 0.5;" />
+                }
+            </div>
+        </MudTh>
+        <MudTh Style="cursor: pointer;" @onclick="@(() => SortBy("Category"))">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                Category
+                @if (_currentSortColumn == "Category")
+                {
+                    <MudIcon Icon="@(_sortAscending ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)" Size="Size.Small" />
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.UnfoldMore" Size="Size.Small" Style="opacity: 0.5;" />
+                }
+            </div>
+        </MudTh>
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
@@ -32,7 +79,7 @@
         </MudTd>
         <MudTd DataLabel="Name">@context.Name</MudTd>
         <MudTd DataLabel="Description">@context.Description</MudTd>
-        <MudTd DataLabel="Price">@context.Price</MudTd>
+        <MudTd DataLabel="Price (€)">@context.Price.ToString("F2")</MudTd>
         <MudTd DataLabel="StockQuantity">@context.StockQuantity</MudTd>
         <MudTd DataLabel="Category">@context.Category?.Name</MudTd>
         <MudTd DataLabel="Actions">
@@ -48,18 +95,19 @@
                 Icon="@Icons.Material.Filled.Delete" aria-label="delete" 
                 OnClick="() => OnProductDelete(context.Id)" >
             </MudIconButton>             
-            </MudTd>
+        </MudTd>
     </RowTemplate>
 </MudTable>
-
 
 @code {
 
     private string Message { get; set; } = string.Empty;
 
     private List<Product> ProductList { get; set; } = new();
+    private List<Product> SortedProductList { get; set; } = new();
 
-    private bool _loading = true;
+    private string _currentSortColumn = string.Empty;
+    private bool _sortAscending = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -68,20 +116,77 @@
         {
             await LoadProducts();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            Message = "Error fetching products!";
+            Message = $"Error fetching products: {ex.Message}";
+            StateHasChanged();
         }
     }
 
     private async Task LoadProducts()
     {
-        ProductList = await ApiService.GetProductsAsync();
-        _loading = false;
+        try
+        {
+            ProductList = await ApiService.GetProductsAsync();
+            SortedProductList = new List<Product>(ProductList);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Message = $"Failed to load products: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private void SortBy(string columnName)
+    {
+        if (_currentSortColumn == columnName)
+        {
+            // Toggle sort direction if same column
+            _sortAscending = !_sortAscending;
+        }
+        else
+        {
+            // New column, default to ascending
+            _currentSortColumn = columnName;
+            _sortAscending = true;
+        }
+
+        switch (columnName)
+        {
+            case nameof(Product.Name):
+                SortedProductList = _sortAscending 
+                    ? ProductList.OrderBy(p => p.Name).ToList()
+                    : ProductList.OrderByDescending(p => p.Name).ToList();
+                break;
+
+            case nameof(Product.Price):
+                SortedProductList = _sortAscending 
+                    ? ProductList.OrderBy(p => p.Price).ToList()
+                    : ProductList.OrderByDescending(p => p.Price).ToList();
+                break;
+
+            case nameof(Product.StockQuantity):
+                SortedProductList = _sortAscending 
+                    ? ProductList.OrderBy(p => p.StockQuantity).ToList()
+                    : ProductList.OrderByDescending(p => p.StockQuantity).ToList();
+                break;
+
+            case "Category":
+                SortedProductList = _sortAscending 
+                    ? ProductList.OrderBy(p => p.Category?.Name ?? string.Empty).ToList()
+                    : ProductList.OrderByDescending(p => p.Category?.Name ?? string.Empty).ToList();
+                break;
+
+            default:
+                SortedProductList = new List<Product>(ProductList);
+                break;
+        }
+
         StateHasChanged();
     }
 
-    private async void OnProductDelete(int id)
+    private async Task OnProductDelete(int id)
     {
         var response = await ApiService.DeleteProductAsync(id);
         if (response.IsSuccessStatusCode)
@@ -92,7 +197,6 @@
         else
         {
             Snackbar.Add("Error deleting product!", Severity.Error);
-            return;
         }
     }
 
@@ -105,8 +209,4 @@
     {
         NavigationManager.NavigateTo($"/product-details/{id}");
     }
-
-
-
-    
 }

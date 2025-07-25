@@ -63,12 +63,15 @@
             </li>
         </ul>
     </div>
-    
-    <!-- Left Brand positioned absolutely - EASTER EGG: Redirects to Stock Up page -->
-    <NavLink href="stock-up" class="navbar-brand ims-logo-container" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);">
-        <div class="ims-logo">
-            <span id="crosshair-element" class="bi bi-crosshair crosshair-random" aria-hidden="true"></span>
-            <span class="bi bi-box box-fixed" aria-hidden="true"></span>
-        </div>
-    </NavLink>
-    </nav>
+</nav>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(50); // Small delay to ensure DOM is ready
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

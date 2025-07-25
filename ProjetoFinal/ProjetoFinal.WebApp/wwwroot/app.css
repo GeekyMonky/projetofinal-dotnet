@@ -1,5 +1,5 @@
 ﻿html, body {
-    font-family: 'Source Code Pro', monospace !important;
+    font-family: 'Montserrat', sans-serif !important;
     margin: 0;
     padding: 0;
 }
@@ -39,7 +39,7 @@
     white-space: nowrap;
     transition: all 0.2s ease-in-out;
     font-size: 0.875rem !important; /* Smaller font size - reduced from 1rem */
-    font-weight: normal; /* Changed from 500 to normal */
+    font-weight: 500; /* Montserrat looks better with medium weight */
     line-height: 1.2;
     letter-spacing: 0.025em; /* Slight letter spacing for better readability */
 }
@@ -65,215 +65,16 @@
     cursor: pointer;
     font-family: inherit;
     font-size: 0.875rem !important; /* Smaller font size - consistent with nav links */
-    font-weight: normal; /* Changed from 500 to normal */
+    font-weight: 500; /* Montserrat looks better with medium weight */
     letter-spacing: 0.025em;
 }
 
-/* IMS Logo Animation Styles - RESPONSIVE */
-.ims-logo-container {
-    text-decoration: none !important;
-    position: absolute;
-    left: clamp(1rem, 8vw, 6rem); /* More conservative positioning */
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 10;
+.dropdown-toggle-btn:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
 }
 
-.ims-logo {
-    position: relative;
-    width: clamp(28px, 5vw, 40px); /* Responsive size */
-    height: clamp(28px, 5vw, 40px);
-    display: grid;
-    place-items: center;
-}
-
-/* TRULY GOOFY ORBIT ANIMATION - extremely erratic and unpredictable */
-@keyframes goofy-orbit {
-    0% { 
-        transform: rotate(0deg) translateX(10px) rotate(0deg) scale(1) skew(0deg, 0deg); 
-    }
-    8% { 
-        transform: rotate(67deg) translateX(25px) rotate(-123deg) scale(0.7) skew(15deg, -8deg); 
-    }
-    15% { 
-        transform: rotate(-34deg) translateX(5px) rotate(89deg) scale(1.4) skew(-20deg, 12deg); 
-    }
-    23% { 
-        transform: rotate(156deg) translateX(30px) rotate(-267deg) scale(0.5) skew(35deg, -25deg); 
-    }
-    31% { 
-        transform: rotate(-89deg) translateX(15px) rotate(345deg) scale(1.6) skew(-45deg, 30deg); 
-    }
-    38% { 
-        transform: rotate(234deg) translateX(8px) rotate(-156deg) scale(0.8) skew(60deg, -15deg); 
-    }
-    46% { 
-        transform: rotate(-178deg) translateX(35px) rotate(234deg) scale(1.2) skew(-30deg, 45deg); 
-    }
-    54% { 
-        transform: rotate(98deg) translateX(3px) rotate(-89deg) scale(0.6) skew(25deg, -60deg); 
-    }
-    62% { 
-        transform: rotate(-267deg) translateX(28px) rotate(156deg) scale(1.5) skew(-55deg, 20deg); 
-    }
-    69% { 
-        transform: rotate(45deg) translateX(12px) rotate(-345deg) scale(0.9) skew(40deg, -35deg); 
-    }
-    77% { 
-        transform: rotate(-123deg) translateX(22px) rotate(78deg) scale(1.3) skew(-15deg, 50deg); 
-    }
-    85% { 
-        transform: rotate(289deg) translateX(7px) rotate(-234deg) scale(0.4) skew(70deg, -10deg); 
-    }
-    92% { 
-        transform: rotate(-45deg) translateX(18px) rotate(123deg) scale(1.7) skew(-25deg, 65deg); 
-    }
-    100% { 
-        transform: rotate(360deg) translateX(10px) rotate(-360deg) scale(1) skew(0deg, 0deg); 
-    }
-}
-
-/* SHAKE ANIMATION - rapid jittery movement */
-@keyframes shake {
-    0%, 100% { transform: translateX(0) translateY(0); }
-    10% { transform: translateX(-2px) translateY(1px); }
-    20% { transform: translateX(3px) translateY(-1px); }
-    30% { transform: translateX(-1px) translateY(2px); }
-    40% { transform: translateX(2px) translateY(-2px); }
-    50% { transform: translateX(-3px) translateY(1px); }
-    60% { transform: translateX(1px) translateY(-3px); }
-    70% { transform: translateX(-2px) translateY(2px); }
-    80% { transform: translateX(3px) translateY(-1px); }
-    90% { transform: translateX(-1px) translateY(3px); }
-}
-
-/* WOBBLE ANIMATION - elastic wobbling effect */
-@keyframes wobble {
-    0% { transform: translateX(0%) rotate(0deg) scaleX(1); }
-    15% { transform: translateX(-25%) rotate(-5deg) scaleX(1.1); }
-    30% { transform: translateX(20%) rotate(3deg) scaleX(0.9); }
-    45% { transform: translateX(-15%) rotate(-3deg) scaleX(1.2); }
-    60% { transform: translateX(10%) rotate(2deg) scaleX(0.8); }
-    75% { transform: translateX(-5%) rotate(-1deg) scaleX(1.1); }
-    100% { transform: translateX(0%) rotate(0deg) scaleX(1); }
-}
-
-/* BOUNCE ANIMATION - bouncing up and down */
-@keyframes bounce {
-    0%, 20%, 53%, 80%, 100% { transform: translateY(0) scaleY(1); }
-    40% { transform: translateY(-15px) scaleY(1.1); }
-    43% { transform: translateY(-15px) scaleY(1.1); }
-    70% { transform: translateY(-7px) scaleY(1.05); }
-    90% { transform: translateY(-2px) scaleY(1.02); }
-}
-
-/* PULSE ANIMATION - pulsing size changes */
-@keyframes pulse {
-    0% { transform: scale(1) rotate(0deg); }
-    25% { transform: scale(1.3) rotate(90deg); }
-    50% { transform: scale(0.7) rotate(180deg); }
-    75% { transform: scale(1.5) rotate(270deg); }
-    100% { transform: scale(1) rotate(360deg); }
-}
-
-/* JELLO ANIMATION - jello-like distortion */
-@keyframes jello {
-    0%, 100% { transform: skew(0deg, 0deg) scale(1); }
-    30% { transform: skew(-12.5deg, -12.5deg) scale(1.1); }
-    40% { transform: skew(6.25deg, 6.25deg) scale(0.9); }
-    50% { transform: skew(-3.125deg, -3.125deg) scale(1.2); }
-    65% { transform: skew(1.5625deg, 1.5625deg) scale(0.8); }
-    75% { transform: skew(-0.78125deg, -0.78125deg) scale(1.1); }
-}
-
-/* ULTIMATE CHAOTIC ANIMATION - all motion types combined into one keyframe */
-@keyframes ultimate-chaos {
-    0% { 
-        transform: rotate(0deg) translateX(10px) translateY(0px) scale(1) skew(0deg, 0deg); 
-    }
-    5% { 
-        transform: rotate(23deg) translateX(18px) translateY(-8px) scale(0.8) skew(12deg, -6deg); 
-    }
-    10% { 
-        transform: rotate(-45deg) translateX(5px) translateY(12px) scale(1.4) skew(-18deg, 15deg); 
-    }
-    15% { 
-        transform: rotate(78deg) translateX(30px) translateY(-15px) scale(0.6) skew(25deg, -20deg); 
-    }
-    20% { 
-        transform: rotate(-112deg) translateX(-8px) translateY(6px) scale(1.6) skew(-35deg, 28deg); 
-    }
-    25% { 
-        transform: rotate(156deg) translateX(22px) translateY(-20px) scale(0.9) skew(45deg, -12deg); 
-    }
-    30% { 
-        transform: rotate(-67deg) translateX(8px) translateY(18px) scale(1.2) skew(-22deg, 35deg); 
-    }
-    35% { 
-        transform: rotate(234deg) translateX(-15px) translateY(-5px) scale(0.7) skew(38deg, -45deg); 
-    }
-    40% { 
-        transform: rotate(-89deg) translateX(35px) translateY(25px) scale(1.5) skew(-52deg, 18deg); 
-    }
-    45% { 
-        transform: rotate(145deg) translateX(-12px) translateY(-22px) scale(0.5) skew(28deg, -38deg); 
-    }
-    50% { 
-        transform: rotate(-178deg) translateX(28px) translateY(8px) scale(1.7) skew(-45deg, 52deg); 
-    }
-    55% { 
-        transform: rotate(67deg) translateX(-5px) translateY(-18px) scale(0.8) skew(35deg, -28deg); 
-    }
-    60% { 
-        transform: rotate(-234deg) translateX(15px) translateY(22px) scale(1.3) skew(-38deg, 42deg); 
-    }
-    65% { 
-        transform: rotate(298deg) translateX(-25px) translateY(-8px) scale(0.6) skew(48deg, -35deg); 
-    }
-    70% { 
-        transform: rotate(-45deg) translateX(12px) translateY(15px) scale(1.4) skew(-25deg, 28deg); 
-    }
-    75% { 
-        transform: rotate(123deg) translateX(-18px) translateY(-12px) scale(0.9) skew(32deg, -42deg); 
-    }
-    80% { 
-        transform: rotate(-156deg) translateX(25px) translateY(5px) scale(1.1) skew(-48deg, 25deg); 
-    }
-    85% { 
-        transform: rotate(289deg) translateX(-8px) translateY(-25px) scale(0.4) skew(55deg, -18deg); 
-    }
-    90% { 
-        transform: rotate(-67deg) translateX(18px) translateY(12px) scale(1.6) skew(-32deg, 48deg); 
-    }
-    95% { 
-        transform: rotate(178deg) translateX(-22px) translateY(-15px) scale(0.7) skew(42deg, -32deg); 
-    }
-    100% { 
-        transform: rotate(360deg) translateX(10px) translateY(0px) scale(1) skew(0deg, 0deg); 
-    }
-}
-
-/* Box that moves with MULTIPLE MOTION TYPES combined */
-.box-fixed {
-    grid-area: 1 / 1;
-    font-size: clamp(0.8rem, 2vw, 1.2rem); /* Responsive font */
-    color: rgba(255, 255, 255, 0.9);
-    z-index: 1;
-    /* SINGLE ULTIMATE CHAOTIC ANIMATION - SLOWER */
-    animation: ultimate-chaos 8s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-    transform-origin: center;
-}
-
-/* Fixed crosshair in the center using grid */
-.crosshair-random {
-    grid-area: 1 / 1;
-    font-size: clamp(0.7rem, 1.8vw, 1rem); /* Responsive font */
-    color: #00ff41;
-    z-index: 2;
-    /* Remove the variable-based movement - crosshair stays fixed */
-}
-
-/* Add this to your app.css file - Home page specific crosshair animation */
 /* Home page specific crosshair animation - BACK TO RANDOM MOVEMENT */
 .home-crosshair-random {
     grid-area: 1 / 1;
@@ -411,6 +212,7 @@ h1 {
     font-size: 3rem;
     margin-bottom: 1rem;
     color: #333;
+    font-weight: 600; /* Montserrat semi-bold looks great for headings */
 }
 
 /* Style paragraphs on home page */
@@ -418,6 +220,7 @@ h1 {
     font-size: 1.2rem;
     color: #666;
     max-width: 600px;
+    font-weight: 400;
 }
 
 h1:focus {
@@ -437,7 +240,7 @@ h1:focus {
 }
 
 .blazor-error-boundary {
-    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNjk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC4yNzcgOTMsNTEzIDI5MSA9NC42NzgyIDI5MSA9Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA6NTcgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAzNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDg2IDY2LjAxODMgMjYzLjU4NiA2Ni4wMTgzWk0yNjMuNTc2IDg2LjHNTdDMjYxLjA0OSA4Ni4wNTQ3IDI1OS43ODYgODcuMzAwNSAyNTkuNzg2IDg5Ljc5MjEgMjU5Ljc4NiA5Mi4yODM3IDI2MS4wNDkgOTMuNTI5NSAyNjMuNTc2IDkzLjUyOTUgMjY2LjExNiA5My41Mjk1IDI3OS44ODcgg== ) no-repeat 1rem/1.8rem, #b32121;
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1zbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNjk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC4yNzcgOTMsNTEzIDI5MSA9NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA6NTcgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAzNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDg2IDY2LjAxODMgMjYzLjU4NiA2Ni4wMTgzWk0yNjMuNTc2IDg2LjHNTdDMjYxLjA0OSA4Ni4wNTQ3IDI1OS43ODYgODcuMzAwNSAyNTkuNzg2IDg5Ljc5MjEgMjU5Ljc4NiA5Mi4yODM3IDI2MS4wNDkgOTMuNTI5NSAyNjMuNTc2IDkzLjUyOTUgMjY2LjExNiA5My41Mjk1IDI3OS44ODcgg== ) no-repeat 1rem/1.8rem, #b32121;
     padding: 1rem 1rem 1rem 3.7rem;
     color: white;
 }
@@ -475,7 +278,7 @@ h1:focus {
     margin-left: 0.5rem;
     font-size: 0.8rem;
     transition: transform 0.2s ease-in-out;
-    font-weight: normal;
+    font-weight: 500;
 }
 
 .dropdown-arrow.rotated,
@@ -532,6 +335,7 @@ h1:focus {
     min-height: 50px; /* Restored original height */
     transition: all 0.2s ease-in-out;
     font-size: 0.875rem; /* Restored original font size */
+    font-weight: 500; /* Montserrat medium weight */
     text-align: center;
     gap: 0.5rem; /* Gap between icon and text */
 }
@@ -576,11 +380,58 @@ h1:focus {
     color: #9ca3af;
     font-size: 0.75rem;
     font-style: italic;
+    font-weight: 400;
 }
 
 /* View/Manage dropdown specific size */
 .view-manage-dropdown {
     min-width: 500px;
+}
+
+/* Enhanced link styling for stock movements link in forms */
+.form-text a,
+.text-muted a {
+    color: #007bff !important;
+    text-decoration: underline !important;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.form-text a:hover,
+.text-muted a:hover {
+    color: #0056b3 !important;
+    text-decoration: underline !important;
+    text-shadow: 0 1px 2px rgba(0, 123, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+/* Make links in small text more prominent */
+small a {
+    color: #007bff !important;
+    text-decoration: underline !important;
+    font-weight: 600 !important;
+    padding: 0.1rem 0.2rem;
+    border-radius: 0.2rem;
+    transition: all 0.2s ease-in-out;
+}
+
+small a:hover {
+    color: #0056b3 !important;
+    background-color: rgba(0, 123, 255, 0.1);
+    text-decoration: underline !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.15);
+}
+
+/* Form labels and general text styling for Montserrat */
+.form-label {
+    font-weight: 500;
+}
+
+/* Button styling for Montserrat */
+.btn {
+    font-weight: 500;
+    letter-spacing: 0.025em;
 }
 
 /* Responsive adjustments for dropdowns */
