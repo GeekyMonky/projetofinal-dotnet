@@ -123,6 +123,61 @@
     position: relative;
 }
 
+/* Stock Up icon in home page lower right corner - SMALLER SIZE, NO GLOW */
+.home-stock-up-icon {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    padding: 0.3rem;
+    transition: all 0.3s ease-in-out;
+    z-index: 1000;
+}
+
+.home-stock-up-icon:hover {
+    transform: translateY(-2px) scale(1.05);
+    text-decoration: none;
+}
+
+.home-stock-up-icon .bi-graph-up-arrow {
+    color: #00ff41 !important; /* Neon green color */
+    font-size: 1.5rem; /* Reduced from 2.5rem */
+    transition: all 0.3s ease-in-out;
+}
+
+.home-stock-up-icon:hover .bi-graph-up-arrow {
+    color: #00ff41 !important;
+    transform: scale(1.05); /* Reduced hover effect */
+}
+
+/* Responsive adjustments for home stock up icon */
+@media (max-width: 768px) {
+    .home-stock-up-icon {
+        bottom: 1.5rem;
+        right: 1.5rem;
+        padding: 0.25rem;
+    }
+    
+    .home-stock-up-icon .bi-graph-up-arrow {
+        font-size: 1.3rem; /* Reduced from 2.2rem */
+    }
+}
+
+@media (max-width: 480px) {
+    .home-stock-up-icon {
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.2rem;
+    }
+    
+    .home-stock-up-icon .bi-graph-up-arrow {
+        font-size: 1.1rem; /* Reduced from 2rem */
+    }
+}
+
 /* Update responsive adjustments to remove boxed styling */
 @media (max-width: 768px) {
     .home-container {
