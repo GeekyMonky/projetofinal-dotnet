@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjetoFinal.BusinessContext;
 using ProjetoFinal.BusinessContext.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace ProjetoFinal.Api.Controllers
 {
@@ -11,10 +12,12 @@ namespace ProjetoFinal.Api.Controllers
     public class StockMovementController : ControllerBase
     {
         private readonly IBusinessContext _businessContext;
+        private readonly ILogger<StockMovementController> _logger;
 
-        public StockMovementController(IBusinessContext businessContext)
+        public StockMovementController(IBusinessContext businessContext, ILogger<StockMovementController> logger)
         {
             _businessContext = businessContext;
+            _logger = logger;
         }
 
         [HttpGet("/stock-movements")]
@@ -197,43 +200,78 @@ namespace ProjetoFinal.Api.Controllers
         {
             try
             {
+                _logger.LogInformation($"=== Attempting to delete stock movement {id} ===");
+
                 var existingStockMovement = await _businessContext.StockMovements.FindAsync(id);
 
                 if (existingStockMovement == null || existingStockMovement.IsDeleted)
                 {
+                    _logger.LogWarning($"Stock movement {id} not found or already deleted");
                     return NotFound("Stock movement not found.");
                 }
 
-                // Find the product and revert the stock movement
+                _logger.LogInformation($"Found stock movement: ID={existingStockMovement.Id}, Quantity={existingStockMovement.Quantity}, ProductId={existingStockMovement.ProductId}");
+
+                // Find the product (including deleted products for stock movements)
                 var product = await _businessContext.Products
-                    .FirstOrDefaultAsync(p => p.Id == existingStockMovement.ProductId && !p.IsDeleted);
+                    .FirstOrDefaultAsync(p => p.Id == existingStockMovement.ProductId);
                 
                 if (product == null)
                 {
-                    return BadRequest("Product not found.");
+                    _logger.LogWarning($"Product {existingStockMovement.ProductId} not found in database");
+                    return BadRequest("Product not found in database.");
                 }
 
-                // Revert the stock movement from the product
-                product.StockQuantity -= existingStockMovement.Quantity;
-                product.UpdatedAt = DateTime.UtcNow;
+                _logger.LogInformation($"Found product: ID={product.Id}, Name={product.Name}, IsDeleted={product.IsDeleted}, CurrentStock={product.StockQuantity}");
 
-                // Mark stock movement as deleted
-                existingStockMovement.IsDeleted = true;
-                existingStockMovement.UpdatedAt = DateTime.UtcNow;
+                // If the product is deleted, we can simply delete the stock movement without updating stock
+                if (product.IsDeleted)
+                {
+                    _logger.LogInformation($"Product {product.Id} is deleted, proceeding to delete stock movement without stock adjustment");
+                    
+                    // Mark stock movement as deleted
+                    existingStockMovement.IsDeleted = true;
+                    existingStockMovement.UpdatedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    // Product is not deleted, check if deletion would cause negative stock
+                    var newStockQuantity = product.StockQuantity - existingStockMovement.Quantity;
+                    _logger.LogInformation($"New stock quantity will be: {newStockQuantity} (current: {product.StockQuantity} - movement: {existingStockMovement.Quantity})");
 
+                    // Check if the new stock quantity would be negative
+                    if (newStockQuantity < 0)
+                    {
+                        _logger.LogWarning($"Cannot delete stock movement {id}: would result in negative stock ({newStockQuantity})");
+                        return BadRequest($"Cannot delete this stock movement as it would result in negative stock quantity ({newStockQuantity}). Current stock: {product.StockQuantity}, Movement quantity: {existingStockMovement.Quantity}");
+                    }
+
+                    // Revert the stock movement from the product
+                    product.StockQuantity = newStockQuantity;
+                    product.UpdatedAt = DateTime.UtcNow;
+
+                    // Mark stock movement as deleted
+                    existingStockMovement.IsDeleted = true;
+                    existingStockMovement.UpdatedAt = DateTime.UtcNow;
+                }
+
+                _logger.LogInformation($"Saving changes to database...");
                 var result = await _businessContext.SaveChangesAsync(true);
 
                 if (result > 0)
                 {
+                    _logger.LogInformation($"Successfully deleted stock movement {id}");
                     return Ok();
                 }
                 else
                 {
+                    _logger.LogError($"No changes were saved when deleting stock movement {id}");
                     return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while deleting the stock movement.");
                 }
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"Exception occurred while deleting stock movement {id}");
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while deleting the stock movement: {ex.Message}");
             }
         }
