@@ -22,7 +22,7 @@
             <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete"
                            OnClick="() => OnCategoryDelete(context.Id)">   
             </MudIconButton>
-            </MudTd>
+        </MudTd>
     </RowTemplate>
 </MudTable>
 
@@ -53,16 +53,33 @@
 
     private async void OnCategoryDelete(int id)
     {
+        var category = categories.FirstOrDefault(c => c.Id == id);
+
+        if (category != null && category.Products != null && category.Products.Any())
+        {
+            Snackbar.Add("Category can't be deleted because it has products associated with it.", Severity.Error);
+            return;
+        }
+
         var response = await ApiService.DeleteCategoryAsync(id);
-        if(response.IsSuccessStatusCode)
+
+        if (response.IsSuccessStatusCode)
         {
             Snackbar.Add("Category deleted successfully.", Severity.Success);
             await LoadCategories();
         }
         else
         {
-            Snackbar.Add("Failed to delete category.", Severity.Error);
-            return;
+            // Try to read the error message from the response
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            if (errorMessage.Contains("products associated", StringComparison.OrdinalIgnoreCase))
+            {
+                Snackbar.Add("Category can't be deleted because it has products associated with it.", Severity.Error);
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete category.", Severity.Error);
+            }
         }
     }
 
