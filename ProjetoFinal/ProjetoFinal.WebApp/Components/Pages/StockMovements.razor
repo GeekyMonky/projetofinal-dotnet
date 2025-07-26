@@ -1,9 +1,12 @@
 ﻿@page "/stock-movements"
 @using ProjetoFinal.Shared
+@rendermode InteractiveServer
 @inject IApiService ApiService
 @inject ISnackbar Snackbar
-@rendermode InteractiveServer
 @inject NavigationManager NavigationManager
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
 
 <h3>Stock Movements</h3>
 <h3>@Message</h3>
