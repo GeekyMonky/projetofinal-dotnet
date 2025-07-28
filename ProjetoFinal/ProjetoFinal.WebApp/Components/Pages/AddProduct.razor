@@ -1,0 +1,443 @@
+﻿@page "/add-product"
+@page "/edit-product/{Id:int}"
+@using ProjetoFinal.Shared
+@using Refit
+@using System.Text.Json
+@rendermode InteractiveServer
+@inject IApiService ApiService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+
+@if (Id > 0)
+{
+    <h3>Edit Product</h3>
+}
+else
+{
+    <h3>Add Product</h3>
+}
+
+@if (_loadingCategories)
+{
+    <div class="d-flex justify-content-center my-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading categories...</span>
+        </div>
+    </div>
+}
+else
+{
+    <EditForm FormName="ProductForm" Model="Product" OnValidSubmit="OnAddProduct">
+        <div class="mb-3">
+            <label for="name" class="form-label">Name:</label>
+            <InputText id="name" class="form-control" placeholder="" @bind-Value="Product.Name" />
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description:</label>
+            <InputTextArea id="description" class="form-control" @bind-Value="Product.Description" />
+        </div>
+        <div class="mb-3">
+            <label for="price" class="form-label">Price (€):</label>
+            <InputNumber id="price" class="form-control" @bind-Value="Product.Price" />
+        </div>
+        @if (Id > 0)
+        {
+            <div class="mb-3">
+                <label class="form-label">Current Stock Quantity:</label>
+                <div class="form-control-plaintext">@Product.StockQuantity</div>
+                <small class="form-text text-muted">Stock quantity is managed through stock movements. <a href="/stock-movements">Manage stock movements</a></small>
+            </div>
+        }
+        <div class="mb-3">
+            <label for="category" class="form-label">Category:</label>
+            <InputSelect id="category" class="form-control" @bind-Value="Product.CategoryId">
+                <option value="0">-- Select a Category --</option>
+                @foreach (var category in Categories)
+                {
+                    <option value="@category.Id">@category.Name</option>
+                }
+            </InputSelect>
+            @if (Product.CategoryId == 0)
+            {
+                <small class="form-text text-danger">Please select a category.</small>
+            }
+        </div>
+
+        <!-- Image Management Section -->
+        <div class="mb-3">
+            <label class="form-label">Product Images:</label>
+            
+            @if (Id > 0 && Product.Images != null && Product.Images.Any())
+            {
+                <div class="row mb-3">
+                    @foreach (var image in Product.Images)
+                    {
+                        <div class="col-md-3 mb-2">
+                            <div class="card">
+                                <img src="@image.Url" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Product Image" />
+                                <div class="card-body p-2">
+                                    <button type="button" class="btn btn-danger btn-sm w-100" @onclick="() => DeleteImage(image.Id)">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="border rounded p-3">
+                <label for="imageUpload" class="form-label">Add Images:</label>
+                <InputFile id="imageUpload" class="form-control" OnChange="HandleImageSelection" multiple accept="image/*" />
+                <small class="form-text text-muted">Select one or more image files (JPG, PNG, GIF, WebP). Max 5MB per file.</small>
+                
+                @if (SelectedImages.Any())
+                {
+                    <div class="mt-3">
+                        <h6>Selected Images:</h6>
+                        <div class="row">
+                            @foreach (var imageInfo in SelectedImages)
+                            {
+                                <div class="col-md-3 mb-2">
+                                    <div class="card">
+                                        <div class="card-body p-2">
+                                            <p class="card-text small mb-1">@imageInfo.FileName</p>
+                                            <p class="card-text small text-muted">@(Math.Round(imageInfo.Size / 1024.0 / 1024.0, 2)) MB</p>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveSelectedImage(imageInfo)">
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @{
+            var buttonText = Id > 0 ? "Save" : "Add";
+        }
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit" disabled="@(Product.CategoryId == 0 || _isSubmitting)">
+                @if (_isSubmitting)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                }
+                @buttonText Product
+            </button>
+            
+            @if (Id > 0 && SelectedImages.Any())
+            {
+                <button type="button" class="btn btn-success" @onclick="UploadImages" disabled="@_isSubmitting">
+                    @if (_isUploadingImages)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    }
+                    Upload Images
+                </button>
+            }
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private Product Product { get; set; } = new();
+    private List<Category> Categories { get; set; } = new();
+    private bool _loadingCategories = true;
+    private bool _isSubmitting = false;
+    private bool _isUploadingImages = false;
+
+    private List<ImageFileInfo> SelectedImages { get; set; } = new();
+
+    public class ImageFileInfo
+    {
+        public string FileName { get; set; } = string.Empty;
+        public long Size { get; set; }
+        public IBrowserFile File { get; set; } = null!;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            // Load categories first
+            Categories = await ApiService.GetCategoriesAsync();
+            _loadingCategories = false;
+
+            if (Id > 0)
+            {
+                try
+                {
+                    Product = await ApiService.GetProductAsync(Id);
+                    StateHasChanged();
+                }
+                catch (Exception)
+                {
+                    Snackbar.Add("Failed to load product data.", Severity.Error);
+                }
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load categories.", Severity.Error);
+            _loadingCategories = false;
+        }
+    }
+
+    private void HandleImageSelection(InputFileChangeEventArgs e)
+    {
+        SelectedImages.Clear();
+        
+        foreach (var file in e.GetMultipleFiles(10)) // Max 10 files
+        {
+            // Validate file type
+            var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp" };
+            if (!allowedTypes.Contains(file.ContentType.ToLowerInvariant()))
+            {
+                Snackbar.Add($"File {file.Name} is not a valid image type.", Severity.Warning);
+                continue;
+            }
+
+            // Validate file size (5MB)
+            if (file.Size > 5 * 1024 * 1024)
+            {
+                Snackbar.Add($"File {file.Name} is too large. Maximum size is 5MB.", Severity.Warning);
+                continue;
+            }
+
+            SelectedImages.Add(new ImageFileInfo
+            {
+                FileName = file.Name,
+                Size = file.Size,
+                File = file
+            });
+        }
+
+        StateHasChanged();
+    }
+
+    private void RemoveSelectedImage(ImageFileInfo imageInfo)
+    {
+        SelectedImages.Remove(imageInfo);
+        StateHasChanged();
+    }
+
+    private async Task UploadImages()
+    {
+        if (!SelectedImages.Any() || Id == 0) return;
+
+        _isUploadingImages = true;
+        StateHasChanged();
+
+        try
+        {
+            foreach (var imageInfo in SelectedImages.ToList())
+            {
+                try
+                {
+                    Console.WriteLine($"=== Uploading: {imageInfo.FileName} ===");
+                    Console.WriteLine($"File size: {imageInfo.Size} bytes");
+                    Console.WriteLine($"Content type: {imageInfo.File.ContentType}");
+                    
+                    using var stream = imageInfo.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // Increased to 10MB
+                    using var ms = new MemoryStream();
+                    await stream.CopyToAsync(ms);
+                    ms.Position = 0;
+
+                    Console.WriteLine($"Stream length: {ms.Length} bytes");
+
+                    var streamPart = new StreamPart(ms, imageInfo.FileName, imageInfo.File.ContentType);
+                    
+                    Console.WriteLine($"Making API call to upload image for product {Id}");
+                    var response = await ApiService.UploadProductImageAsync(Id, streamPart);
+
+                    Console.WriteLine($"Response status: {response.StatusCode}");
+                    Console.WriteLine($"Response reason: {response.ReasonPhrase}");
+                    
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Response content: {responseContent}");
+                    
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Snackbar.Add($"Image {imageInfo.FileName} uploaded successfully!", Severity.Success);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Upload failed with status: {response.StatusCode}");
+                        Snackbar.Add($"Failed to upload {imageInfo.FileName}: {response.StatusCode} - {responseContent}", Severity.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception during upload: {ex.Message}");
+                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                    Snackbar.Add($"Error uploading {imageInfo.FileName}: {ex.Message}", Severity.Error);
+                }
+            }
+
+            // Clear selected images and reload product data
+            SelectedImages.Clear();
+            Product = await ApiService.GetProductAsync(Id);
+            StateHasChanged();
+        }
+        finally
+        {
+            _isUploadingImages = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteImage(int imageId)
+    {
+        try
+        {
+            var response = await ApiService.DeleteImageAsync(imageId);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Image deleted successfully!", Severity.Success);
+                // Reload product data to update the UI
+                Product = await ApiService.GetProductAsync(Id);
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete image.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deleting image: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnAddProduct()
+    {
+        if (Product.CategoryId == 0)
+        {
+            Snackbar.Add("Please select a category.", Severity.Warning);
+            return;
+        }
+
+        _isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            if (Id > 0)
+            {
+                // Update existing product
+                var productToUpdate = new Product
+                {
+                    Id = Id,
+                    Name = Product.Name,
+                    Description = Product.Description,
+                    Price = Product.Price,
+                    StockQuantity = Product.StockQuantity,
+                    CategoryId = Product.CategoryId,
+                    Category = null,
+                    Images = null,
+                    StockMovements = null
+                };
+
+                var response = await ApiService.UpdateProduct(productToUpdate);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Product updated successfully!", Severity.Success);
+                    
+                    // Upload any selected images for existing product
+                    if (SelectedImages.Any())
+                    {
+                        await UploadImages();
+                    }
+                    
+                    await Task.Delay(1000);
+                    NavigationManager.NavigateTo("/products");
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to update product. Status: {response.StatusCode}", Severity.Error);
+                }
+            }
+            else
+            {
+                // Add new product
+                var productToAdd = new Product
+                {
+                    Name = Product.Name,
+                    Description = Product.Description,
+                    Price = Product.Price,
+                    StockQuantity = 0,
+                    CategoryId = Product.CategoryId,
+                    Category = null,
+                    Images = null,
+                    StockMovements = null
+                };
+
+                var response = await ApiService.AddProductAsync(productToAdd);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Get the product ID from the response
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(responseContent);
+                    
+                    if (result?.TryGetValue("productId", out var productIdElement) == true)
+                    {
+                        var productId = productIdElement.GetInt32();
+                        
+                        // Upload images to the new product
+                        if (SelectedImages.Any())
+                        {
+                            foreach (var imageInfo in SelectedImages)
+                            {
+                                try
+                                {
+                                    using var stream = imageInfo.File.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+                                    using var ms = new MemoryStream();
+                                    await stream.CopyToAsync(ms);
+                                    ms.Position = 0;
+
+                                    var streamPart = new StreamPart(ms, imageInfo.FileName, imageInfo.File.ContentType);
+                                    await ApiService.UploadProductImageAsync(productId, streamPart);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Snackbar.Add($"Error uploading {imageInfo.FileName}: {ex.Message}", Severity.Warning);
+                                }
+                            }
+                        }
+                    }
+
+                    Snackbar.Add("Product added successfully! Add stock movements to set initial inventory.", Severity.Success);
+                    Product = new();
+                    SelectedImages.Clear();
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to add product. Status: {response.StatusCode}", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Operation failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+}

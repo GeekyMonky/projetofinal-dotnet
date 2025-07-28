@@ -1,0 +1,93 @@
+﻿@page "/categories"
+@using ProjetoFinal.Shared
+@rendermode InteractiveServer
+@inject IApiService ApiService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+
+<h3>Categories</h3>
+<h3>@Message</h3>
+
+<MudTable Items="categories" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Actions">
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="edit"
+                           OnClick="() => OnEditCategory(context.Id)">
+            </MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete"
+                           OnClick="() => OnCategoryDelete(context.Id)">   
+            </MudIconButton>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code{
+    private string Message { get; set; } = string.Empty;
+
+    private List<Category> categories { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            await LoadCategories();
+        }
+        catch (Exception)
+        {
+            Message = "An error occurred while fetching categories.";
+        }
+    }
+
+    private async Task LoadCategories()
+    {
+        categories = await ApiService.GetCategoriesAsync();
+        StateHasChanged();
+    }
+
+    private async void OnCategoryDelete(int id)
+    {
+        var category = categories.FirstOrDefault(c => c.Id == id);
+
+        if (category != null && category.Products != null && category.Products.Any())
+        {
+            Snackbar.Add("Category can't be deleted because it has products associated with it. Please delete these products first.", Severity.Error);
+            return;
+        }
+
+        var response = await ApiService.DeleteCategoryAsync(id);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Category deleted successfully.", Severity.Success);
+            await LoadCategories();
+        }
+        else
+        {
+            // Try to read the error message from the response
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            if (errorMessage.Contains("products associated", StringComparison.OrdinalIgnoreCase))
+            {
+                Snackbar.Add("Category can't be deleted because it has products associated with it. Please delete these products first.", Severity.Error);
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete category.", Severity.Error);
+            }
+        }
+    }
+
+    private void OnEditCategory(int id)
+    {
+        NavigationManager.NavigateTo($"/edit-category/{id}");
+    }
+}

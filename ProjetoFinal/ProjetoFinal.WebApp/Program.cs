@@ -1,11 +1,16 @@
 using MudBlazor.Services;
+using ProjetoFinal.WebApp;
 using ProjetoFinal.WebApp.Components;
+using Refit;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddRefitClient<IApiService>()
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://localhost:7222"));
 
 builder.Services.AddMudServices();
 

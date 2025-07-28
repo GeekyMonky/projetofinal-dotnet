@@ -7,7 +7,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Components\Pages\Counter.razor" />
+    <Content Remove="Components\Pages\Weather.razor" />
+    <Content Remove="wwwroot\images\2cfb13a3-93fa-4bb5-9b06-e5c5dfa47048.png" />
+    <Content Remove="wwwroot\images\433b3553-c87c-4edd-b11b-c8c162090ab8.png" />
+    <Content Remove="wwwroot\images\b3f2fc25-4682-4a16-91d9-4dbc2d9d6f45.png" />
+    <Content Remove="wwwroot\images\ef2abd09-5baf-4765-b9a1-5e0df9c696bc.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MudBlazor" Version="8.9.0" />
+    <PackageReference Include="Refit" Version="8.0.0" />
+    <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0" />
+    <PackageReference Include="Refit.Newtonsoft.Json" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
