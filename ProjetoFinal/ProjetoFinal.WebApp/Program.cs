@@ -11,13 +11,13 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddRefitClient<IApiService>()
-    .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://localhost:7212"));
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://localhost:7222"));
 
 builder.Services.AddMudServices();
 
 
 builder.Services.AddScoped(sp =>
-    new HttpClient { BaseAddress = new Uri("https://localhost:7212") }); 
+    new HttpClient { BaseAddress = new Uri("https://localhost:7222") }); 
 builder.Services.AddScoped<DashboardService>();
 
 

@@ -60,13 +60,12 @@ namespace ProjetoFinal.Api.Controllers
 
         //Get Total Sales
         [HttpGet("sales/total")]
-        public async Task<ActionResult<int>> GetTotalSales()
+        public ActionResult<int> GetTotalSales() // Remove async Task wrapper
         {
-            var totalSales = await Task.FromResult(
-                _context.StockMovements
-                    .Where(sm => sm.Quantity < 0)
-                    .Sum(sm => Math.Abs(sm.Quantity))
-            );
+            var totalSales = _context.StockMovements
+                .Where(sm => sm.Quantity < 0)
+                .Sum(sm => Math.Abs(sm.Quantity));
+            
             return Ok(totalSales);
         }
     }
