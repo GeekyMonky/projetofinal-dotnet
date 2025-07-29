@@ -1,7 +1,145 @@
 ﻿@page "/"
+@implements IDisposable
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="home-container">
+    <div class="home-logo-section">
+        <div class="home-logo">
+            <span id="home-crosshair-element" class="bi bi-crosshair home-crosshair-random" aria-hidden="true" style="--home-x: 0px; --home-y: 0px;"></span>
+            <span class="bi bi-box home-box-fixed" aria-hidden="true"></span>
+        </div>
+        <h1>Stock Ops</h1>
+    </div> 
+    <p>You know the drill.</p>
+    
+    <!-- Stock Up icon in lower right corner -->
+    <NavLink href="stock-up" class="home-stock-up-icon">
+        <span class="bi bi-graph-up-arrow"></span>
+    </NavLink>
+</div>
 
-Welcome to your new app.
+<!-- Pure JavaScript animation - no Blazor dependencies -->
+<script>
+    (function() {
+        console.log('🚀 Initializing pure JS animation...');
+        
+        // Function to start animation
+        function initHomeAnimation() {
+            // Clear any existing animation
+            if (window.homeAnimationInterval) {
+                clearInterval(window.homeAnimationInterval);
+                window.homeAnimationInterval = null;
+            }
+            
+            // Wait for element
+            function waitAndStart() {
+                const element = document.getElementById('home-crosshair-element');
+                
+                if (!element) {
+                    console.log('⏳ Waiting for element...');
+                    setTimeout(waitAndStart, 50);
+                    return;
+                }
+                
+                console.log('✅ Element found, starting animation');
+                
+                function updatePosition() {
+                    const x = (Math.random() - 0.5) * 120;
+                    const y = (Math.random() - 0.5) * 120;
+                    
+                    element.style.setProperty('--home-x', x + 'px');
+                    element.style.setProperty('--home-y', y + 'px');
+                    
+                    console.log(`🎯 Position: x=${x.toFixed(1)}px, y=${y.toFixed(1)}px`);
+                }
+                
+                // Initial position
+                updatePosition();
+                
+                // Start animation
+                window.homeAnimationInterval = setInterval(updatePosition, 2000);
+                console.log('✅ Animation started');
+            }
+            
+            waitAndStart();
+        }
+        
+        // Start immediately if DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initHomeAnimation);
+        } else {
+            initHomeAnimation();
+        }
+        
+        // Also trigger on Blazor page changes
+        if (window.Blazor) {
+            window.Blazor.addEventListener('enhancedload', function() {
+                console.log('🔄 Blazor page changed, restarting animation...');
+                setTimeout(initHomeAnimation, 100);
+            });
+        }
+        
+        // Backup timer to restart if animation stops
+        setInterval(function() {
+            if (document.getElementById('home-crosshair-element') && !window.homeAnimationInterval) {
+                console.log('🔄 Animation stopped, restarting...');
+                initHomeAnimation();
+            }
+        }, 5000);
+        
+        // Make the function globally available for manual restart
+        window.restartHomeAnimation = initHomeAnimation;
+        
+        console.log('✅ Animation system initialized');
+    })();
+</script>
+
+@code {
+    private bool _isDisposed = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Minimal Blazor interaction - just trigger restart via global function
+        if (!_isDisposed)
+        {
+            try
+            {
+                await Task.Delay(200);
+                await JSRuntime.InvokeVoidAsync("eval", @"
+                    if (window.restartHomeAnimation) {
+                        console.log('🔄 Blazor triggering animation restart...');
+                        window.restartHomeAnimation();
+                    }
+                ");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Animation restart failed: {ex.Message}");
+                // If Blazor fails, the pure JS backup timer will handle it
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _isDisposed = true;
+        
+        // Try to cleanup, but don't depend on it
+        try
+        {
+            _ = JSRuntime.InvokeVoidAsync("eval", @"
+                if (window.homeAnimationInterval) {
+                    clearInterval(window.homeAnimationInterval);
+                    window.homeAnimationInterval = null;
+                    console.log('🧹 Animation cleaned up');
+                }
+            ");
+        }
+        catch
+        {
+            // Pure JS will handle cleanup if needed
+        }
+    }
+}

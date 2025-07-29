@@ -1,0 +1,204 @@
+﻿@page "/stock-movements"
+@using ProjetoFinal.Shared
+@rendermode InteractiveServer
+@inject IApiService ApiService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+
+<h3>Stock Movements</h3>
+<h3>@Message</h3>
+
+<MudTable Items="SortedStockMovementList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh Style="cursor: pointer;" @onclick="() => SortBy(nameof(StockMovement.Quantity))">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                Quantity
+                @if (_currentSortColumn == nameof(StockMovement.Quantity))
+                {
+                    <MudIcon Icon="@(_sortAscending ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)" Size="Size.Small" />
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.UnfoldMore" Size="Size.Small" Style="opacity: 0.5;" />
+                }
+            </div>
+        </MudTh>
+        <MudTh Style="cursor: pointer;" @onclick="() => SortBy(nameof(StockMovement.Date))">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                Date
+                @if (_currentSortColumn == nameof(StockMovement.Date))
+                {
+                    <MudIcon Icon="@(_sortAscending ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)" Size="Size.Small" />
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.UnfoldMore" Size="Size.Small" Style="opacity: 0.5;" />
+                }
+            </div>
+        </MudTh>
+        <MudTh Style="cursor: pointer;" @onclick="@(() => SortBy("Product"))">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                Product
+                @if (_currentSortColumn == "Product")
+                {
+                    <MudIcon Icon="@(_sortAscending ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)" Size="Size.Small" />
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.UnfoldMore" Size="Size.Small" Style="opacity: 0.5;" />
+                }
+            </div>
+        </MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+        <MudTd DataLabel="Date">@context.Date.ToString("dd/MM/yyyy")</MudTd>
+        <MudTd DataLabel="Product">
+            @if (context.Product != null)
+            {
+                <span>@context.Product.Name</span>
+            }
+            else
+            {
+                <span style="color: #999;">Product ID: @context.ProductId</span>
+            }
+        </MudTd>
+        <MudTd DataLabel="Actions">
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="edit"
+                           OnClick="() => OnEditStockMovement(context.Id)">
+            </MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete"
+                           OnClick="() => OnStockMovementDelete(context.Id)">   
+            </MudIconButton>
+            </MudTd>
+    </RowTemplate>
+</MudTable>
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Background circle for better visibility -->
+  <circle cx="16" cy="16" r="15" fill="#1a1a1a" stroke="#00ff41" stroke-width="1"/>
+  <!-- Green crosshair -->
+  <g fill="none" stroke="#00ff41" stroke-width="2" stroke-linecap="round">
+    <!-- Vertical line -->
+    <line x1="16" y1="6" x2="16" y2="26"/>
+    <!-- Horizontal line -->
+    <line x1="6" y1="16" x2="26" y2="16"/>
+    <!-- Crosshair circle -->
+    <circle cx="16" cy="16" r="8" fill="none"/>
+    <!-- Corner marks -->
+    <line x1="12" y1="12" x2="14" y2="12"/>
+    <line x1="12" y1="12" x2="12" y2="14"/>
+    <line x1="20" y1="12" x2="18" y2="12"/>
+    <line x1="20" y1="12" x2="20" y2="14"/>
+    <line x1="12" y1="20" x2="14" y2="20"/>
+    <line x1="12" y1="20" x2="12" y2="18"/>
+    <line x1="20" y1="20" x2="18" y2="20"/>
+    <line x1="20" y1="20" x2="20" y2="18"/>
+  </g>
+</svg>
+
+@code{
+    private string Message { get; set; } = string.Empty;
+
+    private List<StockMovement> StockMovementList { get; set; } = new();
+    private List<StockMovement> SortedStockMovementList { get; set; } = new();
+
+    private string _currentSortColumn = string.Empty;
+    private bool _sortAscending = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            await LoadStockMovements();
+        }
+        catch (Exception ex)
+        {
+            Message = $"Error fetching stock movements: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadStockMovements()
+    {
+        try
+        {
+            StockMovementList = await ApiService.GetStockMovementsAsync();
+            SortedStockMovementList = new List<StockMovement>(StockMovementList);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Message = $"Failed to load stock movements: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private void SortBy(string columnName)
+    {
+        if (_currentSortColumn == columnName)
+        {
+            // Toggle sort direction if same column
+            _sortAscending = !_sortAscending;
+        }
+        else
+        {
+            // New column, default to ascending
+            _currentSortColumn = columnName;
+            _sortAscending = true;
+        }
+
+        switch (columnName)
+        {
+            case nameof(StockMovement.Quantity):
+                SortedStockMovementList = _sortAscending 
+                    ? StockMovementList.OrderBy(sm => sm.Quantity).ToList()
+                    : StockMovementList.OrderByDescending(sm => sm.Quantity).ToList();
+                break;
+
+            case nameof(StockMovement.Date):
+                SortedStockMovementList = _sortAscending 
+                    ? StockMovementList.OrderBy(sm => sm.Date).ToList()
+                    : StockMovementList.OrderByDescending(sm => sm.Date).ToList();
+                break;
+
+            case "Product":
+                SortedStockMovementList = _sortAscending 
+                    ? StockMovementList.OrderBy(sm => sm.Product?.Name ?? string.Empty).ToList()
+                    : StockMovementList.OrderByDescending(sm => sm.Product?.Name ?? string.Empty).ToList();
+                break;
+
+            default:
+                SortedStockMovementList = new List<StockMovement>(StockMovementList);
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OnStockMovementDelete(int id)
+    {
+        var response = await ApiService.DeleteStockMovementAsync(id);
+        if(response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Stock movement deleted successfully.", Severity.Success);
+            await LoadStockMovements();
+        }
+        else
+        {
+            Snackbar.Add("Failed to delete stock movement.", Severity.Error);
+        }
+    }
+
+    private void OnEditStockMovement(int id)
+    {
+        NavigationManager.NavigateTo($"/edit-stock-movement/{id}");
+    }
+}
+
