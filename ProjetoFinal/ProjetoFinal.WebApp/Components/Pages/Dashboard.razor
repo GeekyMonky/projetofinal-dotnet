@@ -1,0 +1,145 @@
+﻿@page "/dashboard"
+
+@inject DashboardService DashboardService
+
+<h3>Dashboard</h3>
+
+<div class="dashboard-container">
+    <!-- KPI Cards -->
+    <div class="dashboard-row">
+        <div class="dashboard-card">
+            <h4>Total Sales</h4>
+            <p class="dashboard-value">@totalSales</p>
+        </div>
+        <div class="dashboard-card">
+            <h4>Total Products</h4>
+            <p class="dashboard-value">@totalProducts</p>
+        </div>
+        <div class="dashboard-card">
+            <h4>Total Stock Value</h4>
+            <p class="dashboard-value">$@totalStockValue.ToString("N2")</p>
+        </div>
+    </div>
+
+    <!-- Top 5 Categories -->
+    <div class="dashboard-section">
+        <h4>Top 5 Categories with Most Products</h4>
+        <table class="dashboard-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Products</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var category in topCategories)
+                {
+                    <tr>
+                        <td>@category.CategoryName</td>
+                        <td>@category.ProductCount</td>
+                        <td>
+                            <button @onclick="() => ViewAverageCost(category.CategoryId, category.CategoryName)">View Avg Cost</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (showAverageCost)
+    {
+        <div class="dashboard-section">
+            <h4>Average Cost Price for @selectedCategoryName</h4>
+            <p class="dashboard-value">$@averageCost.ToString("N2")</p>
+        </div>
+    }
+</div>
+
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    .dashboard-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .dashboard-card {
+        background-color: #f5f5f5;
+        border-radius: 8px;
+        padding: 20px;
+        flex: 1;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .dashboard-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    .dashboard-section {
+        background-color: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .dashboard-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .dashboard-table th, .dashboard-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #2980b9;
+    }
+</style>
+
+@code {
+    private int totalSales;
+    private int totalProducts;
+    private decimal totalStockValue;
+    private List<DashboardService.CategoryKpi> topCategories = new();
+    private bool showAverageCost = false;
+    private decimal averageCost;
+    private string selectedCategoryName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardDataAsync();
+    }
+
+    private async Task LoadDashboardDataAsync()
+    {
+        // Load all data in parallel
+        var salesTask = DashboardService.GetTotalSalesAsync();
+        var stockValueTask = DashboardService.GetTotalStockValueAsync();
+        var categoriesTask = DashboardService.GetTopCategoriesAsync();
+
+        // Wait for all tasks to complete
+        await Task.WhenAll(salesTask, stockValueTask, categoriesTask);
+
+        // Assign results
+        totalSales = await salesTask;
+        totalStockValue = await stockValueTask;
+        topCategories = await categoriesTask;
+    }
+
+    private async Task ViewAverageCost(int categoryId, string categoryName)
+    {
+        averageCost = await DashboardService.GetAverageCostPriceAsync(categoryId);
+        selectedCategoryName = categoryName;
+        showAverageCost = true;
+    }
+}
