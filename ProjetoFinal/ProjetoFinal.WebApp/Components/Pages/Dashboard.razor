@@ -10,7 +10,7 @@
     <!-- KPI Cards -->
     <div class="dashboard-row">
         <div class="dashboard-card">
-            <h4>Total Sales</h4>
+            <h4>Total Movements Today</h4>
             <p class="dashboard-value">@totalSales</p>
         </div>
         <div class="dashboard-card">
@@ -19,7 +19,7 @@
         </div>
         <div class="dashboard-card">
             <h4>Total Stock Value</h4>
-            <p class="dashboard-value">$@totalStockValue.ToString("N2")</p>
+            <p class="dashboard-value">€@totalStockValue.ToString("N2")</p>
         </div>
     </div>
 
@@ -95,7 +95,7 @@
                             <tr>
                                 <td>@category.CategoryName</td>
                                 <td>@category.ProductCount</td>
-                                <td>$@category.AverageCost.ToString("N2")</td>
+                                <td>€@category.AverageCost.ToString("N2")</td>
                             </tr>
                         }
                     </tbody>
