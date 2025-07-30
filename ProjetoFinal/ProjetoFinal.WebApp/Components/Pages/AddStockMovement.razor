@@ -30,8 +30,16 @@ else
     <EditForm FormName="StockMovementForm" Model="StockMovement" OnValidSubmit="OnAddStockMovement">
         <div class="mb-3">
             <label for="quantity" class="form-label">Quantity:</label>
-            <InputNumber id="quantity" class="form-control" placeholder="" @bind-Value="StockMovement.Quantity" />
+            <InputNumber id="quantity" class="form-control" placeholder="" @bind-Value="StockMovement.Quantity" @onchange="ValidateStockQuantity" />
             <small class="form-text text-muted">Use positive numbers for stock increases (incoming inventory) and negative numbers for stock decreases (sales, waste, etc.)</small>
+            
+            @if (_showStockWarning)
+            {
+                <div class="alert alert-warning mt-2" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Warning: This movement would result in negative stock (@_projectedStock units). Current stock: @_currentStock
+                </div>
+            }
         </div>
         <div class="mb-3">
             <label for="date" class="form-label">Date:</label>
@@ -39,7 +47,7 @@ else
         </div>
         <div class="mb-3">
             <label for="product" class="form-label">Product:</label>
-            <InputSelect id="product" class="form-control" @bind-Value="StockMovement.ProductId">
+            <InputSelect id="product" class="form-control" @bind-Value="StockMovement.ProductId" @onchange="OnProductChanged">
                 <option value="0">-- Select a Product --</option>
                 @foreach (var product in Products)
                 {
@@ -53,18 +61,30 @@ else
         </div>
         @{
             var buttonText = Id > 0 ? "Save" : "Add";
+            var isDisabled = StockMovement.ProductId == 0 || _showStockWarning || _isSubmitting;
         }
-        <button class="btn btn-primary" type="submit" disabled="@(StockMovement.ProductId == 0)">@buttonText</button>
+        <button class="btn btn-primary" type="submit" disabled="@isDisabled">
+            @if (_isSubmitting)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            }
+            @buttonText
+        </button>
+        <a href="/stock-movements" class="btn btn-secondary ms-2">Cancel</a>
     </EditForm>
 }
 
 @code {
-
     [Parameter]
     public int Id { get; set; }
     private StockMovement StockMovement { get; set; } = new();
     private List<Product> Products { get; set; } = new();
     private bool _loadingProducts = true;
+    private bool _isSubmitting = false;
+    private bool _showStockWarning = false;
+    private int _currentStock = 0;
+    private int _projectedStock = 0;
+    private StockMovement? _originalStockMovement;
 
     protected override async Task OnInitializedAsync()
     {
@@ -81,6 +101,14 @@ else
                 try
                 {
                     StockMovement = await ApiService.GetStockMovementAsync(Id);
+                    _originalStockMovement = new StockMovement
+                    {
+                        Id = StockMovement.Id,
+                        Quantity = StockMovement.Quantity,
+                        Date = StockMovement.Date,
+                        ProductId = StockMovement.ProductId
+                    };
+                    ValidateStockQuantity();
                 }
                 catch (Exception)
                 {
@@ -100,6 +128,49 @@ else
         }
     }
 
+    private void OnProductChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int productId))
+        {
+            StockMovement.ProductId = productId;
+            ValidateStockQuantity();
+        }
+    }
+
+    private void ValidateStockQuantity()
+    {
+        _showStockWarning = false;
+        
+        if (StockMovement.ProductId <= 0)
+            return;
+
+        var selectedProduct = Products.FirstOrDefault(p => p.Id == StockMovement.ProductId);
+        if (selectedProduct == null)
+            return;
+
+        _currentStock = selectedProduct.StockQuantity;
+        
+        // Calculate projected stock after this movement
+        if (Id > 0 && _originalStockMovement != null)
+        {
+            // For editing: remove the original movement effect and add the new one
+            _projectedStock = _currentStock - _originalStockMovement.Quantity + StockMovement.Quantity;
+        }
+        else
+        {
+            // For new movement: just add the movement to current stock
+            _projectedStock = _currentStock + StockMovement.Quantity;
+        }
+
+        // Show warning if projected stock would be negative
+        if (_projectedStock < 0)
+        {
+            _showStockWarning = true;
+        }
+
+        StateHasChanged();
+    }
+
     private async Task OnAddStockMovement()
     {
         if (StockMovement.ProductId == 0)
@@ -114,15 +185,38 @@ else
             return;
         }
 
+        // Final validation before submission
+        ValidateStockQuantity();
+        if (_showStockWarning)
+        {
+            Snackbar.Add($"Cannot complete this stock movement. It would result in negative stock ({_projectedStock} units). Current stock is {_currentStock} units.", Severity.Error);
+            return;
+        }
+
+        _isSubmitting = true;
+        StateHasChanged();
+
         try
         {
             if (Id > 0)
             {
-                var response = await ApiService.UpdateStockMovement(StockMovement);
+                var stockMovementToUpdate = new StockMovement
+                {
+                    Id = Id,
+                    Quantity = StockMovement.Quantity,
+                    Date = StockMovement.Date,
+                    ProductId = StockMovement.ProductId,
+                    Product = null
+                };
+
+                var response = await ApiService.UpdateStockMovement(stockMovementToUpdate);
                 if (response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Stock movement updated successfully!", Severity.Success);
-                    StockMovement = new();
+                    await Task.Delay(1000);
+                    // Refresh products to show updated stock
+                    Products = await ApiService.GetProductsAsync();
+                    StateHasChanged();
                 }
                 else
                 {
@@ -131,12 +225,26 @@ else
             }
             else
             {
-                var response = await ApiService.AddStockMovementAsync(StockMovement);
+                var stockMovementToAdd = new StockMovement
+                {
+                    Quantity = StockMovement.Quantity,
+                    Date = StockMovement.Date,
+                    ProductId = StockMovement.ProductId,
+                    Product = null
+                };
+
+                var response = await ApiService.AddStockMovementAsync(stockMovementToAdd);
                 if (response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Stock movement added successfully!", Severity.Success);
-                    StockMovement = new();
-                    StockMovement.Date = DateTime.Today; // Reset date to today for next entry
+                    
+                    // Reset form
+                    StockMovement = new StockMovement { Date = DateTime.Today };
+                    _showStockWarning = false;
+                    
+                    // Refresh products to show updated stock
+                    Products = await ApiService.GetProductsAsync();
+                    StateHasChanged();
                 }
                 else
                 {
@@ -147,6 +255,11 @@ else
         catch (Exception ex)
         {
             Snackbar.Add($"Operation failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+            StateHasChanged();
         }
     }
 }
