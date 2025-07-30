@@ -29,4 +29,15 @@ public class DashboardService
         public string CategoryName { get; set; } = string.Empty;
         public int ProductCount { get; set; }
     }
+    public async Task<List<CategoryStock>> GetStockByCategoryAsync() =>
+    await _httpClient.GetFromJsonAsync<List<CategoryStock>>("api/dashboard/stock-by-category") ?? new();
+
+    public class CategoryStock
+    {
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+        public int TotalStock { get; set; }
+        public decimal TotalValue { get; set; }
+    }
+
 }
