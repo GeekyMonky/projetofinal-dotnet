@@ -2,71 +2,131 @@
 @using ProjetoFinal.Shared
 @inject IApiService ApiService
 
-<h3>Product Details</h3>
-
-@if (_loading)
-{
-    <div class="d-flex justify-content-center my-4">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+<div class="container-fluid px-3">
+    <div class="row">
+        <div class="col-12">
+            <h3>Product Details</h3>
         </div>
     </div>
-}
-else if (Product == null)
-{
-    <div class="alert alert-danger">Product not found.</div>
-}
-else
-{
-    <table class="table table-bordered table-striped">
-        <thead class="table-light">
-            <tr>
-                <th scope="col">Property</th>
-                <th scope="col">Value</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Name</td>
-                <td>@Product.Name</td>
-            </tr>
-            <tr>
-                <td>Description</td>
-                <td>@Product.Description</td>
-            </tr>
-            <tr>
-                <td>Price (€)</td>
-                <td>@Product.Price</td>
-            </tr>
-            <tr>
-                <td>Stock Quantity</td>
-                <td>@Product.StockQuantity</td>
-            </tr>
-            <tr>
-                <td>Category</td>
-                <td>@Product.Category?.Name</td>
-            </tr>
-            <tr>
-                <td>Images</td>
-                <td>
-                    @if (Product.Images != null && Product.Images.Any())
-                    {
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach (var img in Product.Images)
-                            {
-                                <img src="@img.Url" alt="@Product.Name" width="150" height="150" class="img-thumbnail" />
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <span>No images available.</span>
-                    }
-                </td>
-            </tr>
-        </tbody>
-    </table>
-}
+    
+    @if (_loading)
+    {
+        <div class="d-flex justify-content-center my-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (Product == null)
+    {
+        <div class="alert alert-danger">Product not found.</div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Property</th>
+                                <th scope="col">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Name</td>
+                                <td>@Product.Name</td>
+                            </tr>
+                            <tr>
+                                <td>Price (€)</td>
+                                <td>@Product.Price.ToString("F2")</td>
+                            </tr>
+                            <tr>
+                                <td>Stock Quantity</td>
+                                <td>@Product.StockQuantity</td>
+                            </tr>
+                            <tr>
+                                <td>Category</td>
+                                <td>@Product.Category?.Name</td>
+                            </tr>
+                            <tr>
+                                <td>Description</td>
+                                <td>
+                                    <div class="description-content mb-3">
+                                        @Product.Description
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Images</td>
+                                <td>
+                                    @if (Product.Images != null && Product.Images.Any())
+                                    {
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @foreach (var img in Product.Images)
+                                            {
+                                                <img src="@img.Url" alt="@Product.Name" width="150" height="150" class="img-thumbnail product-image" />
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span>No images available.</span>
+                                    }
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .description-content {
+        line-height: 1.7;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        font-size: 1rem;
+        border: none;
+        min-height: 100px;
+    }
+
+    .product-image {
+        max-height: 200px;
+        object-fit: cover;
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .product-image:hover {
+        transform: scale(1.05);
+    }
+
+    /* Dark mode support */
+    [data-theme="dark"] .description-content {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+    }
+
+    [data-theme="dark"] .product-image {
+        border-color: var(--border-color);
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .description-content {
+            padding: 1rem;
+        }
+        .product-image {
+            max-height: 150px;
+        }
+    }
+</style>
 
 @code {
     [Parameter]
