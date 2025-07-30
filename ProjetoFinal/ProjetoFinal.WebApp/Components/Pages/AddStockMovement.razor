@@ -30,7 +30,9 @@ else
     <EditForm FormName="StockMovementForm" Model="StockMovement" OnValidSubmit="OnAddStockMovement">
         <div class="mb-3">
             <label for="quantity" class="form-label">Quantity:</label>
-            <InputNumber id="quantity" class="form-control" placeholder="" @bind-Value="StockMovement.Quantity" @onchange="ValidateStockQuantity" />
+            <InputNumber id="quantity" class="form-control" placeholder="" 
+                         @bind-Value="StockMovement.Quantity" 
+                         @oninput="OnQuantityInput" />
             <small class="form-text text-muted">Use positive numbers for stock increases (incoming inventory) and negative numbers for stock decreases (sales, waste, etc.)</small>
             
             @if (_showStockWarning)
@@ -261,6 +263,15 @@ else
             _isSubmitting = false;
             StateHasChanged();
         }
+    }
+
+    private void OnQuantityInput(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int quantity))
+        {
+            StockMovement.Quantity = quantity;
+        }
+        ValidateStockQuantity();
     }
 }
 
