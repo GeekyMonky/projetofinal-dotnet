@@ -419,7 +419,8 @@ else
                         }
                     }
 
-                    Snackbar.Add("Product added successfully! Add stock movements to set initial inventory.", Severity.Success);
+                    Snackbar.Add("Product added successfully!", Severity.Success);
+                    Snackbar.Add("Make sure to add stock movements to set its initial inventory.", Severity.Info);
                     Product = new();
                     SelectedImages.Clear();
                     StateHasChanged();
