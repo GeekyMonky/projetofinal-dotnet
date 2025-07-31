@@ -17,6 +17,16 @@ namespace ProjetoFinal.Api.Controllers
             _context = context;
         }
 
+        [HttpGet("movements/today")]
+        public IActionResult GetTotalMovementsToday()
+        {
+            var today = DateTime.Today;
+            var totalMovements = _context.StockMovements
+                .Where(sm => sm.Date.Date == today && !sm.IsDeleted)
+                .Sum(sm => Math.Abs(sm.Quantity));
+            return Ok(totalMovements);
+        }
+
         // Top 5 categories with most products
         [HttpGet("top-categories")]
         public IActionResult GetTopCategories()
@@ -91,6 +101,50 @@ namespace ProjetoFinal.Api.Controllers
 
             return Ok(stockByCategory);
         }
+        [HttpGet("movements/daily-by-category")]
+        public IActionResult GetDailyMovementsByCategory()
+        {
+            var startDate = DateTime.Today.AddDays(-29);
+            var endDate = DateTime.Today;
+
+            var data = _context.StockMovements
+                .Where(sm => sm.Date.Date >= startDate && sm.Date.Date <= endDate && !sm.IsDeleted)
+                .Include(sm => sm.Product)
+                .ThenInclude(p => p.Category)
+                .AsEnumerable()
+                .GroupBy(sm => new { sm.Date.Date, Category = sm.Product?.Category?.Name ?? "Uncategorized" })
+                .Select(g => new
+                {
+                    Date = g.Key.Date,
+                    Category = g.Key.Category,
+                    Total = g.Sum(sm => sm.Quantity)
+                })
+                .ToList();
+
+            return Ok(data);
+        }
+
+        [HttpGet("stock-exits/today")]
+        public IActionResult GetTotalStockExitsToday()
+        {
+            var today = DateTime.Today;
+            var exits = _context.StockMovements
+                .Where(sm => sm.Date.Date == today && sm.Quantity < 0 && !sm.IsDeleted)
+                .Sum(sm => Math.Abs(sm.Quantity));
+            return Ok(exits);
+        }
+
+        [HttpGet("stock-entries/today")]
+        public IActionResult GetTotalStockEntriesToday()
+        {
+            var today = DateTime.Today;
+            var entries = _context.StockMovements
+                .Where(sm => sm.Date.Date == today && sm.Quantity > 0 && !sm.IsDeleted)
+                .Sum(sm => sm.Quantity);
+            return Ok(entries);
+        }
+
+
     }
 }
     

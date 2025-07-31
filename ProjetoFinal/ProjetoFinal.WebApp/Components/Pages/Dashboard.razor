@@ -1,6 +1,7 @@
 ﻿@page "/dashboard"
 @using System.Collections.Generic
 @using System.Linq
+@using MudBlazor
 
 @inject DashboardService DashboardService
 
@@ -10,82 +11,50 @@
     <!-- KPI Cards -->
     <div class="dashboard-row">
         <div class="dashboard-card">
-            <h4>Total Movements Today</h4>
-            <p class="dashboard-value">@totalSales</p>
+            <h4>Stock Exits Today</h4>
+            <p class="dashboard-value" style="color: #e53935;">-@totalExits</p>
         </div>
         <div class="dashboard-card">
-            <h4>Total Products</h4>
-            <p class="dashboard-value">@totalProducts</p>
+            <h4>Stock Entries Today</h4>
+            <p class="dashboard-value" style="color: #43a047;">+@totalEntries</p>
         </div>
         <div class="dashboard-card">
             <h4>Total Stock Value</h4>
             <p class="dashboard-value">€@totalStockValue.ToString("N2")</p>
         </div>
     </div>
+    
 
-    <div class="dashboard-row">
-        <!-- Stock by Category Pie Chart -->
-        <div class="dashboard-section" style="flex: 1;">
-            <h4>Stock Distribution by Category</h4>
-            @if (isLoading)
-            {
-                <p>Loading chart data...</p>
-            }
-            else
-            {
-                <div style="height: 350px;">
-                    <MudChart ChartType="ChartType.Pie"
-                              InputData="@categoryStockData"
-                              InputLabels="@categoryLabels"
-                              Width="100%" Height="300px"
-                              LegendPosition="Position.Bottom">
-                        <CustomGraphics>
-                            @for (int i = 0; i < categoryLabels.Length; i++)
-                            {
-                                var index = i; // Capture the current index in a local variable
-                                <text>
-                                    <g @onmouseover="() => ShowPercentage(index)" @onmouseout="HidePercentage">
-                                        <path d="@GetSegmentPath(index)" fill="@GetSegmentColor(index)" stroke="white" stroke-width="1"></path>
-                                    </g>
-                                </text>
-                            }
-                            @if (showPercentageTooltip)
-                            {
-                                <foreignObject x="@tooltipX" y="@tooltipY" width="100" height="40">
-                                    <div class="percentage-tooltip">
-                                        @categoryLabels[selectedSegment]: @categoryPercentages[selectedSegment]%
-                                    </div>
-                                </foreignObject>
-                            }
-                        </CustomGraphics>
-                    </MudChart>
-                </div>
-                <div class="percentage-legend">
-                    @for (int i = 0; i < categoryLabels.Length; i++)
-                    {
-                        <div class="legend-item">
-                            <span class="color-box" style="background-color: @GetSegmentColor(i)"></span>
-                            <span>@categoryLabels[i]: @categoryPercentages[i]%</span>
-                        </div>
-                    }
-                </div>
-            }
-        </div>
+  
+        <div class="dashboard-row">
+            <!-- Stock by Category Pie Chart -->
+            <div class="dashboard-section" style="flex: 1;">
+                <h4>Stock Distribution by Category</h4>
+                @if (isLoading)
+                {
+                    <p>Loading chart data...</p>
+                }
+                else
+                {
+                    <div style="height: 350px;">
+                        <MudChart ChartType="ChartType.Pie"
+                                  InputData="@categoryStockData"
+                                  InputLabels="@categoryLabels"
+                                  Width="100%" Height="300px"
+                                  LegendPosition="Position.Bottom" />
+                    </div>
+                }
+            </div>
 
-        <!-- Top 5 Categories -->
-        <div class="dashboard-section" style="flex: 1;">
-            <h4>Top 5 Categories with Most Products</h4>
-            @if (isLoading)
-            {
-                <p>Loading category data...</p>
-            }
-            else
-            {
+            <!-- Top 5 Categories -->
+            <div class="dashboard-section" style="flex: 1;">
+                <h4>Top 5 Categories with Most Products</h4>
                 <table class="dashboard-table">
                     <thead>
                         <tr>
                             <th>Category</th>
                             <th>Products</th>
+                            <th>Total Quantity</th>
                             <th>Average Price</th>
                         </tr>
                     </thead>
@@ -95,15 +64,52 @@
                             <tr>
                                 <td>@category.CategoryName</td>
                                 <td>@category.ProductCount</td>
+                                <td>@category.TotalQuantity</td>
                                 <td>€@category.AverageCost.ToString("N2")</td>
                             </tr>
                         }
+                        <tr style="font-weight:bold;">
+                            <td>Total</td>
+                            <td>@topCategoriesWithAverageCost.Sum(c => c.ProductCount)</td>
+                            <td>@topCategoriesWithAverageCost.Sum(c => c.TotalQuantity)</td>
+                            <td>
+                                €@(
+                                   topCategoriesWithAverageCost.Any()
+                                   ? (topCategoriesWithAverageCost.Sum(c => c.AverageCost) / topCategoriesWithAverageCost.Count).ToString("N2")
+                                   : "0.00"
+                                   )
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+            
+    </div>
+    <div class="dashboard-row">
+        <div class="dashboard-section" style="flex: 1;">
+            <h4>Daily Stock Movements by Category (Last 15 Days)</h4>
+            @if (isLoading)
+            {
+                <p>Loading daily movements...</p>
+            }
+            else
+            {
+                <MudChart ChartType="ChartType.StackedBar"
+                          InputLabels="@barLabels"
+                          Width="100%" Height="600px"
+                          ChartSeries="@chartSeries"
+                          XAxisLabels="@barLabels"
+                          LegendPosition="Position.Bottom"
+                          Stacked="true" />
+
+
             }
         </div>
     </div>
-</div>
+
+
 
 <style>
     .dashboard-container {
@@ -179,9 +185,22 @@
         margin-right: 5px;
         border-radius: 2px;
     }
+
+
+    /* Add these new rules here */
+    ::deep .mud-chart text {
+        font-size: 11px;
+    }
+
+    ::deep .mud-chart-xaxis text {
+        transform: rotate(-45deg) translate(-10px, 0);
+        text-anchor: end;
+    }
 </style>
 
 @code {
+    private int totalExits;
+    private int totalEntries;
     private int totalSales;
     private int totalProducts;
     private decimal totalStockValue;
@@ -210,6 +229,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadDashboardDataAsync();
+        await LoadStackedBarDataAsync();
     }
 
     private async Task LoadDashboardDataAsync()
@@ -218,52 +238,66 @@
         {
             isLoading = true;
 
-            // Load all data in parallel
+            // Add new tasks for exits and entries
+            var exitsTask = DashboardService.GetTotalStockExitsTodayAsync();
+            var entriesTask = DashboardService.GetTotalStockEntriesTodayAsync();
+
             var salesTask = DashboardService.GetTotalSalesAsync();
             var stockValueTask = DashboardService.GetTotalStockValueAsync();
             var categoriesTask = DashboardService.GetTopCategoriesAsync();
             var stocksByCategoryTask = DashboardService.GetStockByCategoryAsync();
 
-            // Wait for all tasks to complete
-            await Task.WhenAll(salesTask, stockValueTask, categoriesTask, stocksByCategoryTask);
+            await Task.WhenAll(salesTask, stockValueTask, categoriesTask, stocksByCategoryTask, exitsTask, entriesTask);
 
-            // Assign results
             totalSales = await salesTask;
             totalStockValue = await stockValueTask;
             var categories = await categoriesTask;
             categoryStocks = await stocksByCategoryTask;
+            totalExits = await exitsTask;
+            totalEntries = await entriesTask;
 
             // Prepare pie chart data
             PrepareChartData();
 
-            // Load average costs for each category
+            // Load average costs and total quantity for each category
             topCategoriesWithAverageCost.Clear();
             foreach (var category in categories)
             {
                 try
                 {
                     var averageCost = await DashboardService.GetAverageCostPriceAsync(category.CategoryId);
+
+                    // Get total quantity for this category
+                    var totalQuantity = 0;
+                    var productsInCategory = categoryStocks
+                        .Where(c => c.CategoryId == category.CategoryId)
+                        .Select(c => c.TotalStock)
+                        .FirstOrDefault();
+                    totalQuantity = (int)productsInCategory;
+
                     topCategoriesWithAverageCost.Add(new CategoryWithAverageCost
                         {
                             CategoryId = category.CategoryId,
                             CategoryName = category.CategoryName,
                             ProductCount = category.ProductCount,
+                            TotalQuantity = totalQuantity,
                             AverageCost = averageCost
                         });
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error loading average cost for category {category.CategoryId}: {ex.Message}");
-                    // Add category with default value for average cost
                     topCategoriesWithAverageCost.Add(new CategoryWithAverageCost
                         {
                             CategoryId = category.CategoryId,
                             CategoryName = category.CategoryName,
                             ProductCount = category.ProductCount,
+                            TotalQuantity = 0,
                             AverageCost = 0
                         });
                 }
             }
+
 
             // Calculate total products
             totalProducts = topCategoriesWithAverageCost.Sum(c => c.ProductCount);
@@ -283,15 +317,12 @@
         if (categoryStocks == null || !categoryStocks.Any())
             return;
 
-        // Get the top 5 categories by stock quantity, and group the rest as "Other"
         var top5Categories = categoryStocks.OrderByDescending(c => c.TotalStock).Take(5).ToList();
         var otherCategoriesStock = categoryStocks.OrderByDescending(c => c.TotalStock).Skip(5).Sum(c => c.TotalStock);
 
-        // Prepare data arrays
         var dataList = top5Categories.Select(c => (double)c.TotalStock).ToList();
         var labelsList = top5Categories.Select(c => c.CategoryName).ToList();
 
-        // Add "Other" category if there are more than 5 categories
         if (otherCategoriesStock > 0)
         {
             dataList.Add(otherCategoriesStock);
@@ -299,12 +330,16 @@
         }
 
         categoryStockData = dataList.ToArray();
-        categoryLabels = labelsList.ToArray();
 
-        // Calculate percentages
         double total = categoryStockData.Sum();
         categoryPercentages = categoryStockData.Select(value => Math.Round((value / total) * 100, 1)).ToArray();
+
+        // This line is the key:
+        categoryLabels = labelsList
+            .Select((label, i) => $"{label} ({categoryPercentages[i]}%)")
+            .ToArray();
     }
+
 
     // Event handlers for tooltips
     private void ShowPercentage(int index)
@@ -340,6 +375,74 @@
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public int ProductCount { get; set; }
+        public int TotalQuantity { get; set; }
         public decimal AverageCost { get; set; }
     }
+    private double[] stackedBarData = Array.Empty<double>();
+    private string[] barLabels = Array.Empty<string>();
+    private string[] barCategories = Array.Empty<string>();
+
+    private async Task LoadStackedBarDataAsync()
+    {
+        try
+        {
+            var data = await DashboardService.GetDailyMovementsByCategoryAsync();
+
+            // Prepare the last 15 days as DateTime (oldest to newest)
+            var dates = Enumerable.Range(0, 15)
+                .Select(i => DateTime.Today.AddDays(-14 + i).Date)
+                .ToArray();
+
+            barLabels = dates.Select(d => d.ToString("MM/dd")).ToArray();
+
+            // Get all unique categories
+            var categories = data.Select(d => d.Category).Distinct().ToArray();
+
+            // Build the chart series: one per category
+            chartSeries = new List<ChartSeries>();
+            foreach (var category in categories)
+            {
+                var categoryData = new double[dates.Length];
+                for (int i = 0; i < dates.Length; i++)
+                {
+                    var date = dates[i];
+                    // Find the value for this category and date, or 0 if missing
+                    var value = data.FirstOrDefault(d => d.Category == category && d.Date.Date == date);
+                    categoryData[i] = value != null ? Convert.ToDouble(value.Total) : 0;
+                }
+                chartSeries.Add(new ChartSeries
+                    {
+                        Name = category,
+                        Data = categoryData
+                    });
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading bar chart data: {ex.Message}");
+        }
+    }
+
+    private List<ChartSeries> chartSeries = new();
+
+    private List<ChartSeries> GetChartSeries()
+    {
+        return chartSeries;
+    }
+
+
+    private double[] GetCategoryData(int categoryIndex)
+    {
+        // Extract data for a specific category across all dates
+        int datesCount = barLabels.Length;
+        int startIndex = categoryIndex * datesCount;
+
+        return stackedBarData
+            .Skip(startIndex)
+            .Take(datesCount)
+            .ToArray();
+    }
+
+
 }
