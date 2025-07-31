@@ -17,7 +17,7 @@
 
 <MudTable Items="SortedProductList" Hover="true" Breakpoint="Breakpoint.Sm">
     <HeaderContent>
-        <MudTh>Image</MudTh>
+        <MudTh style="width: 180px;">Image</MudTh>
         <MudTh Style="cursor: pointer;" @onclick="() => SortBy(nameof(Product.Name))">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
                 Name
@@ -45,7 +45,7 @@
                 }
             </div>
         </MudTh>
-        <MudTh Style="cursor: pointer;" @onclick="() => SortBy(nameof(Product.StockQuantity))">
+        <MudTh Style="width: 70px; cursor: pointer;" @onclick="() => SortBy(nameof(Product.StockQuantity))">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
                 Stock Quantity
                 @if (_currentSortColumn == nameof(Product.StockQuantity))
@@ -74,24 +74,28 @@
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Image">
+        <MudTd DataLabel="Image" style="width: 180px;">
             @if (context.Images != null && context.Images.Any())
             {
-                <MudImage Width="150" Height="150" Src="@context.Images.First().Url" Alt="@context.Name" />
+                <MudImage Width="160" Height="160" Src="@context.Images.First().Url" Alt="@context.Name" />
             }
             else
             {
                 <span>No Image</span>
             }
         </MudTd>
-        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Name">
+            @(context.Name?.Length > 30 
+                ? context.Name.Substring(0, 30) + "..." 
+                : context.Name)
+        </MudTd>
         <MudTd DataLabel="Description">
             @(context.Description?.Length > 30 
                 ? context.Description.Substring(0, 30) + "..." 
                 : context.Description)
         </MudTd>
         <MudTd DataLabel="Price (€)">@context.Price.ToString("F2")</MudTd>
-        <MudTd DataLabel="StockQuantity">@context.StockQuantity</MudTd>
+        <MudTd DataLabel="StockQuantity" style="width: 70px;">@context.StockQuantity</MudTd>
         <MudTd DataLabel="Category">@context.Category?.Name</MudTd>
         <MudTd DataLabel="Actions">
             <MudIconButton Icon="@Icons.Material.Filled.Visibility"
