@@ -62,7 +62,7 @@
         // Check if category has products - show error immediately without validation box
         if (products != null && products.Any())
         {
-            Snackbar.Add("Category can't be deleted because it has products associated with it. Please delete these products first.", Severity.Error);
+            Snackbar.Add("This category can't be deleted because it has products associated with it. Please delete its products first.", Severity.Error);
             return;
         }
 
@@ -99,7 +99,7 @@
             var errorMessage = await response.Content.ReadAsStringAsync();
             if (errorMessage.Contains("products associated", StringComparison.OrdinalIgnoreCase))
             {
-                Snackbar.Add("Category can't be deleted because it has products associated with it. Please delete these products first.", Severity.Error);
+                Snackbar.Add("This category can't be deleted because it has products associated with it. Please delete its products first.", Severity.Error);
             }
             else
             {
