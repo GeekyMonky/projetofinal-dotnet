@@ -164,28 +164,47 @@ namespace ProjetoFinal.Api.Controllers
         [HttpPut("/products/{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            var existingProduct = await _businessContext.Products.FindAsync(id);
+            try
+            {
+                var existingProduct = await _businessContext.Products.FindAsync(id);
 
-            if (existingProduct == null || existingProduct.IsDeleted)
-            {
-                return NotFound("Product not found.");
-            }
-           
-            existingProduct.IsDeleted = true;
-            existingProduct.UpdatedAt = DateTime.UtcNow;
+                if (existingProduct == null || existingProduct.IsDeleted)
+                {
+                    return NotFound("Product not found.");
+                }
 
-            var result = await _businessContext.SaveChangesAsync(true);
-            
-            if (result > 0)
-            {
-                return Ok(result);
+                // Find all stock movements associated with this product
+                var stockMovements = await _businessContext.StockMovements
+                    .Where(sm => sm.ProductId == id && !sm.IsDeleted)
+                    .ToListAsync();
+
+                // Mark all stock movements as deleted
+                foreach (var stockMovement in stockMovements)
+                {
+                    stockMovement.IsDeleted = true;
+                    stockMovement.UpdatedAt = DateTime.UtcNow;
+                }
+
+                // Mark the product as deleted
+                existingProduct.IsDeleted = true;
+                existingProduct.UpdatedAt = DateTime.UtcNow;
+
+                var result = await _businessContext.SaveChangesAsync(true);
+                
+                if (result > 0)
+                {
+                    return Ok(new { Message = "Product and associated stock movements deleted successfully", DeletedStockMovements = stockMovements.Count });
+                }
+                else 
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while deleting the product.");
+                }
             }
-            else 
+            catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while deleting the product.");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while deleting the product: {ex.Message}");
             }
         }
     }
 }
-    
     

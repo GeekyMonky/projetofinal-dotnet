@@ -4,9 +4,12 @@
 @inject IApiService ApiService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 @* Needed for snackbars *@
 <MudSnackbarProvider />
+
+<PageTitle>Categories List</PageTitle>
 
 <h3>Categories</h3>
 <h3>@Message</h3>
@@ -23,7 +26,7 @@
                            OnClick="() => OnEditCategory(context.Id)">
             </MudIconButton>
             <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete"
-                           OnClick="() => OnCategoryDelete(context.Id)">   
+                           OnClick="() => OnCategoryDeleteConfirm(context.Id, context.Name, context.Products)">   
             </MudIconButton>
         </MudTd>
     </RowTemplate>
@@ -54,16 +57,35 @@
         StateHasChanged();
     }
 
-    private async void OnCategoryDelete(int id)
+    private async Task OnCategoryDeleteConfirm(int id, string categoryName, ICollection<Product>? products)
     {
-        var category = categories.FirstOrDefault(c => c.Id == id);
-
-        if (category != null && category.Products != null && category.Products.Any())
+        // Check if category has products - show error immediately without validation box
+        if (products != null && products.Any())
         {
             Snackbar.Add("Category can't be deleted because it has products associated with it. Please delete these products first.", Severity.Error);
             return;
         }
 
+        try
+        {
+            var confirmed = await JSRuntime.InvokeAsync<bool>("showMudBlazorStyleConfirm", "category", categoryName);
+            if (confirmed)
+            {
+                await OnCategoryDelete(id);
+            }
+            else
+            {
+                Snackbar.Add("Category deletion cancelled.", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error showing confirmation dialog: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnCategoryDelete(int id)
+    {
         var response = await ApiService.DeleteCategoryAsync(id);
 
         if (response.IsSuccessStatusCode)

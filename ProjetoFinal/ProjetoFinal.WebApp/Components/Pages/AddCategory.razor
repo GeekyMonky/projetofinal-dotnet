@@ -12,10 +12,12 @@
 @if (Id > 0)
 {
     <h3>Edit Category</h3>
+    <PageTitle>Edit Category</PageTitle>
 }
 else
 {
     <h3>Add Category</h3>
+    <PageTitle>Add Category</PageTitle>
 }
 
 <EditForm FormName="CategoryForm" Model="Category" OnValidSubmit="OnAddCategory">

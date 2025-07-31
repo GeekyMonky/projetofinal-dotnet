@@ -1,12 +1,16 @@
 ﻿@page "/products"
 @using ProjetoFinal.Shared
+@using System.Text.Json
 @rendermode InteractiveServer
 @inject IApiService ApiService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 @* Needed for snackbars *@
 <MudSnackbarProvider />
+
+<PageTitle>Products List</PageTitle>
 
 <h3>Products</h3>
 <h3>@Message</h3>
@@ -81,7 +85,11 @@
             }
         </MudTd>
         <MudTd DataLabel="Name">@context.Name</MudTd>
-        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Description">
+            @(context.Description?.Length > 40 
+                ? context.Description.Substring(0, 40) + "..." 
+                : context.Description)
+        </MudTd>
         <MudTd DataLabel="Price (€)">@context.Price.ToString("F2")</MudTd>
         <MudTd DataLabel="StockQuantity">@context.StockQuantity</MudTd>
         <MudTd DataLabel="Category">@context.Category?.Name</MudTd>
@@ -96,7 +104,8 @@
             </MudIconButton>
             <MudIconButton
                 Icon="@Icons.Material.Filled.Delete" aria-label="delete" 
-                OnClick="() => OnProductDelete(context.Id)" >
+                OnClick="() => OnProductDeleteConfirm(context.Id, context.Name)"
+                Disabled="@_isDeleting">
             </MudIconButton>             
         </MudTd>
     </RowTemplate>
@@ -111,6 +120,7 @@
 
     private string _currentSortColumn = string.Empty;
     private bool _sortAscending = true;
+    private bool _isDeleting = false; // Add this to prevent multiple delete operations
 
     protected override async Task OnInitializedAsync()
     {
@@ -132,11 +142,19 @@
         {
             ProductList = await ApiService.GetProductsAsync();
             SortedProductList = new List<Product>(ProductList);
+            Message = string.Empty; // Clear any previous error messages
+            StateHasChanged();
+        }
+        catch (HttpRequestException httpEx)
+        {
+            Message = $"Network error while loading products: {httpEx.Message}";
+            Snackbar.Add("Network error while loading products", Severity.Error);
             StateHasChanged();
         }
         catch (Exception ex)
         {
             Message = $"Failed to load products: {ex.Message}";
+            Snackbar.Add("Failed to load products", Severity.Error);
             StateHasChanged();
         }
     }
@@ -189,17 +207,73 @@
         StateHasChanged();
     }
 
+    private async Task OnProductDeleteConfirm(int id, string productName)
+    {
+        // Prevent multiple delete operations
+        if (_isDeleting) return;
+
+        try
+        {
+            var confirmed = await JSRuntime.InvokeAsync<bool>("showMudBlazorStyleConfirm", "product", productName);
+            if (confirmed)
+            {
+                await OnProductDelete(id);
+            }
+            else
+            {
+                Snackbar.Add("Product deletion cancelled.", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error showing confirmation dialog: {ex.Message}", Severity.Error);
+        }
+    }
+
     private async Task OnProductDelete(int id)
     {
-        var response = await ApiService.DeleteProductAsync(id);
-        if (response.IsSuccessStatusCode)
+        _isDeleting = true;
+        StateHasChanged(); // Update UI to disable delete buttons
+        
+        try
         {
-            Snackbar.Add("Product deleted successfully!", Severity.Success);
-            await LoadProducts();
+            var response = await ApiService.DeleteProductAsync(id);
+            if (response.IsSuccessStatusCode)
+            {
+                // Parse the response to get deletion details
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var deletionResult = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(responseContent);
+                
+                int deletedStockMovements = 0;
+                if (deletionResult.TryGetProperty("deletedStockMovements", out var stockMovementsProperty))
+                {
+                    deletedStockMovements = stockMovementsProperty.GetInt32();
+                }
+                
+                // Create a detailed success message with proper grammar
+                string successMessage = deletedStockMovements > 0 
+                    ? $"Product deleted successfully! {deletedStockMovements} associated stock movement{(deletedStockMovements == 1 ? " was" : "s were")} also deleted."
+                    : "Product deleted successfully!";
+                    
+                Snackbar.Add(successMessage, Severity.Success);
+                
+                // Reload products list
+                await LoadProducts();
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Error deleting product: {errorContent}", Severity.Error);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Snackbar.Add("Error deleting product!", Severity.Error);
+            Snackbar.Add($"Exception occurred while deleting product: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isDeleting = false;
+            StateHasChanged(); // Re-enable delete buttons
         }
     }
 
