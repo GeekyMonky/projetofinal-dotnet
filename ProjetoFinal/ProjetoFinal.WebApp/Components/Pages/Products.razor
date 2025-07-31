@@ -86,8 +86,8 @@
         </MudTd>
         <MudTd DataLabel="Name">@context.Name</MudTd>
         <MudTd DataLabel="Description">
-            @(context.Description?.Length > 40 
-                ? context.Description.Substring(0, 40) + "..." 
+            @(context.Description?.Length > 30 
+                ? context.Description.Substring(0, 30) + "..." 
                 : context.Description)
         </MudTd>
         <MudTd DataLabel="Price (€)">@context.Price.ToString("F2")</MudTd>
