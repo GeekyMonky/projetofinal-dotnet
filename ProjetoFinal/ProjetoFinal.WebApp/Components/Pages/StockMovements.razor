@@ -1,9 +1,11 @@
 ﻿@page "/stock-movements"
 @using ProjetoFinal.Shared
+@using MudBlazor
 @rendermode InteractiveServer
 @inject IApiService ApiService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 @* Needed for snackbars *@
 <MudSnackbarProvider />
@@ -72,34 +74,11 @@
                            OnClick="() => OnEditStockMovement(context.Id)">
             </MudIconButton>
             <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete"
-                           OnClick="() => OnStockMovementDelete(context.Id)">   
+                           OnClick="@(() => OnStockMovementDeleteConfirm(context.Id, GetProductDisplayName(context), context.Quantity, context.Date))">   
             </MudIconButton>
             </MudTd>
     </RowTemplate>
 </MudTable>
-
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <!-- Background circle for better visibility -->
-  <circle cx="16" cy="16" r="15" fill="#1a1a1a" stroke="#00ff41" stroke-width="1"/>
-  <!-- Green crosshair -->
-  <g fill="none" stroke="#00ff41" stroke-width="2" stroke-linecap="round">
-    <!-- Vertical line -->
-    <line x1="16" y1="6" x2="16" y2="26"/>
-    <!-- Horizontal line -->
-    <line x1="6" y1="16" x2="26" y2="16"/>
-    <!-- Crosshair circle -->
-    <circle cx="16" cy="16" r="8" fill="none"/>
-    <!-- Corner marks -->
-    <line x1="12" y1="12" x2="14" y2="12"/>
-    <line x1="12" y1="12" x2="12" y2="14"/>
-    <line x1="20" y1="12" x2="18" y2="12"/>
-    <line x1="20" y1="12" x2="20" y2="14"/>
-    <line x1="12" y1="20" x2="14" y2="20"/>
-    <line x1="12" y1="20" x2="12" y2="18"/>
-    <line x1="20" y1="20" x2="18" y2="20"/>
-    <line x1="20" y1="20" x2="20" y2="18"/>
-  </g>
-</svg>
 
 @code{
     private string Message { get; set; } = string.Empty;
@@ -182,6 +161,32 @@
         StateHasChanged();
     }
 
+    private string GetProductDisplayName(StockMovement stockMovement)
+    {
+        return stockMovement.Product?.Name ?? $"Product ID: {stockMovement.ProductId}";
+    }
+
+    private async Task OnStockMovementDeleteConfirm(int id, string productName, int quantity, DateTime date)
+    {
+        try
+        {
+            var movementDescription = $"{productName} (Qty: {quantity}, Date: {date:dd/MM/yyyy})";
+            var confirmed = await JSRuntime.InvokeAsync<bool>("showMudBlazorStyleConfirm", "stock movement", movementDescription);
+            if (confirmed)
+            {
+                await OnStockMovementDelete(id);
+            }
+            else
+            {
+                Snackbar.Add("Stock movement deletion cancelled.", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error showing confirmation dialog: {ex.Message}", Severity.Error);
+        }
+    }
+
     private async Task OnStockMovementDelete(int id)
     {
         var response = await ApiService.DeleteStockMovementAsync(id);
@@ -201,4 +206,102 @@
         NavigationManager.NavigateTo($"/edit-stock-movement/{id}");
     }
 }
+
+<script>
+    window.showMudBlazorStyleConfirm = (itemType, itemName) => {
+        return new Promise((resolve) => {
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'custom-mud-dialog-overlay';
+
+            // Create dialog
+            const dialog = document.createElement('div');
+            dialog.className = 'custom-mud-dialog';
+
+            // Title
+            const title = document.createElement('div');
+            title.className = 'custom-mud-dialog-title';
+            title.textContent = 'Confirm Delete';
+
+            // Content (centered, stacked)
+            const content = document.createElement('div');
+            content.className = 'custom-mud-dialog-content';
+            content.style.display = 'block';
+            content.style.textAlign = 'center';
+            content.style.whiteSpace = 'normal';
+
+            // Message
+            let messageHtml = `
+                <div style="margin-bottom: 24px;">Are you sure you want to delete this ${itemType}?</div>
+                <div style="margin-bottom: 24px; font-weight: bold;">${itemName}</div>
+                <div style="margin-bottom: 0;">This action cannot be undone.</div>
+            `;
+            content.innerHTML = messageHtml;
+
+            // Actions
+            const actions = document.createElement('div');
+            actions.className = 'custom-mud-dialog-actions';
+
+            // Cancel button
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'custom-mud-button custom-mud-button-default';
+            cancelBtn.textContent = 'CANCEL';
+            cancelBtn.onclick = () => {
+                overlay.classList.remove('show');
+                setTimeout(() => {
+                    if (document.body.contains(overlay)) {
+                        document.body.removeChild(overlay);
+                    }
+                    resolve(false);
+                }, 300);
+            };
+
+            // Delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'custom-mud-button custom-mud-button-error';
+            deleteBtn.textContent = 'DELETE';
+            deleteBtn.onclick = () => {
+                overlay.classList.remove('show');
+                setTimeout(() => {
+                    if (document.body.contains(overlay)) {
+                        document.body.removeChild(overlay);
+                    }
+                    resolve(true);
+                }, 300);
+            };
+
+            // Assemble dialog
+            actions.appendChild(cancelBtn);
+            actions.appendChild(deleteBtn);
+            dialog.appendChild(title);
+            dialog.appendChild(content);
+            dialog.appendChild(actions);
+            overlay.appendChild(dialog);
+
+            // Add to body
+            document.body.appendChild(overlay);
+
+            // Animate
+            setTimeout(() => {
+                overlay.classList.add('show');
+            }, 10);
+
+            // Overlay click closes
+            overlay.onclick = (e) => {
+                if (e.target === overlay) {
+                    cancelBtn.click();
+                }
+            };
+
+            // ESC key closes
+            const handleEsc = (e) => {
+                if (e.key === 'Escape') {
+                    document.removeEventListener('keydown', handleEsc);
+                    cancelBtn.click();
+                }
+            };
+            document.addEventListener('keydown', handleEsc);
+        });
+    };
+</script>
 
