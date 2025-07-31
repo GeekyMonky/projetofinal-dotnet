@@ -1,12 +1,16 @@
 ﻿@page "/stock-movements"
 @using ProjetoFinal.Shared
+@using MudBlazor
 @rendermode InteractiveServer
 @inject IApiService ApiService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 @* Needed for snackbars *@
 <MudSnackbarProvider />
+
+<PageTitle>Stock Movement List</PageTitle>
 
 <h3>Stock Movements</h3>
 <h3>@Message</h3>
@@ -72,34 +76,11 @@
                            OnClick="() => OnEditStockMovement(context.Id)">
             </MudIconButton>
             <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete"
-                           OnClick="() => OnStockMovementDelete(context.Id)">   
+                           OnClick="@(() => OnStockMovementDeleteConfirm(context.Id, GetProductDisplayName(context), context.Quantity, context.Date))">   
             </MudIconButton>
             </MudTd>
     </RowTemplate>
 </MudTable>
-
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <!-- Background circle for better visibility -->
-  <circle cx="16" cy="16" r="15" fill="#1a1a1a" stroke="#00ff41" stroke-width="1"/>
-  <!-- Green crosshair -->
-  <g fill="none" stroke="#00ff41" stroke-width="2" stroke-linecap="round">
-    <!-- Vertical line -->
-    <line x1="16" y1="6" x2="16" y2="26"/>
-    <!-- Horizontal line -->
-    <line x1="6" y1="16" x2="26" y2="16"/>
-    <!-- Crosshair circle -->
-    <circle cx="16" cy="16" r="8" fill="none"/>
-    <!-- Corner marks -->
-    <line x1="12" y1="12" x2="14" y2="12"/>
-    <line x1="12" y1="12" x2="12" y2="14"/>
-    <line x1="20" y1="12" x2="18" y2="12"/>
-    <line x1="20" y1="12" x2="20" y2="14"/>
-    <line x1="12" y1="20" x2="14" y2="20"/>
-    <line x1="12" y1="20" x2="12" y2="18"/>
-    <line x1="20" y1="20" x2="18" y2="20"/>
-    <line x1="20" y1="20" x2="20" y2="18"/>
-  </g>
-</svg>
 
 @code{
     private string Message { get; set; } = string.Empty;
@@ -180,6 +161,32 @@
         }
 
         StateHasChanged();
+    }
+
+    private string GetProductDisplayName(StockMovement stockMovement)
+    {
+        return stockMovement.Product?.Name ?? $"Product ID: {stockMovement.ProductId}";
+    }
+
+    private async Task OnStockMovementDeleteConfirm(int id, string productName, int quantity, DateTime date)
+    {
+        try
+        {
+            var movementDescription = $"{productName} (Qty: {quantity}, Date: {date:dd/MM/yyyy})";
+            var confirmed = await JSRuntime.InvokeAsync<bool>("showMudBlazorStyleConfirm", "stock movement", movementDescription);
+            if (confirmed)
+            {
+                await OnStockMovementDelete(id);
+            }
+            else
+            {
+                Snackbar.Add("Stock movement deletion cancelled.", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error showing confirmation dialog: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task OnStockMovementDelete(int id)

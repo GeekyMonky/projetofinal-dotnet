@@ -94,6 +94,18 @@
         
         console.log('✅ Animation system initialized');
     })();
+    
+    // Listen for page navigation events
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.Blazor) {
+            window.Blazor.addEventListener('enhancedload', function() {
+                // Restart animation after navigation
+                if (window.location.pathname === '/' && window.restartHomeAnimation) {
+                    setTimeout(window.restartHomeAnimation, 100);
+                }
+            });
+        }
+    });
 </script>
 
 @code {

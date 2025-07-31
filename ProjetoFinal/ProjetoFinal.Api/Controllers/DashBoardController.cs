@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProjetoFinal.BusinessContext;
 using System.Linq;
 
@@ -14,6 +15,16 @@ namespace ProjetoFinal.Api.Controllers
         public DashboardController(IBusinessContext context)
         {
             _context = context;
+        }
+
+        [HttpGet("movements/today")]
+        public IActionResult GetTotalMovementsToday()
+        {
+            var today = DateTime.Today;
+            var totalMovements = _context.StockMovements
+                .Where(sm => sm.Date.Date == today && !sm.IsDeleted)
+                .Sum(sm => Math.Abs(sm.Quantity));
+            return Ok(totalMovements);
         }
 
         // Top 5 categories with most products
@@ -33,13 +44,14 @@ namespace ProjetoFinal.Api.Controllers
 
             return Ok(topCategories);
         }
-
-        // Average cost price per category
         [HttpGet("category/{categoryId}/average-cost")]
         public IActionResult GetAverageCostPrice(int categoryId)
         {
-            var category = _context.Categories.FirstOrDefault(c => c.Id == categoryId);
-            if (category == null || category.Products.Count == 0)
+            var category = _context.Categories
+                .Include(c => c.Products)
+                .FirstOrDefault(c => c.Id == categoryId);
+
+            if (category == null || category.Products == null || !category.Products.Any())
                 return NotFound();
 
             var avgCost = category.Products.Average(p => p.Price);
@@ -65,9 +77,74 @@ namespace ProjetoFinal.Api.Controllers
             var totalSales = _context.StockMovements
                 .Where(sm => sm.Quantity < 0)
                 .Sum(sm => Math.Abs(sm.Quantity));
-            
+
             return Ok(totalSales);
         }
+    
+
+    [HttpGet("stock-by-category")]
+        public IActionResult GetStockByCategory()
+        {
+            var stockByCategory = _context.Products
+                .Include(p => p.Category)
+                .GroupBy(p => new { p.CategoryId, CategoryName = p.Category.Name })
+                .Select(g => new
+                {
+                    CategoryId = g.Key.CategoryId,
+                    CategoryName = g.Key.CategoryName,
+                    TotalStock = g.Sum(p => p.StockQuantity),
+                    TotalValue = g.Sum(p => p.Price * p.StockQuantity)
+                })
+                .Where(c => c.TotalStock > 0) // Only include categories with stock
+                .OrderByDescending(c => c.TotalStock)
+                .ToList();
+
+            return Ok(stockByCategory);
+        }
+        [HttpGet("movements/daily-by-category")]
+        public IActionResult GetDailyMovementsByCategory()
+        {
+            var startDate = DateTime.Today.AddDays(-29);
+            var endDate = DateTime.Today;
+
+            var data = _context.StockMovements
+                .Where(sm => sm.Date.Date >= startDate && sm.Date.Date <= endDate && !sm.IsDeleted)
+                .Include(sm => sm.Product)
+                .ThenInclude(p => p.Category)
+                .AsEnumerable()
+                .GroupBy(sm => new { sm.Date.Date, Category = sm.Product?.Category?.Name ?? "Uncategorized" })
+                .Select(g => new
+                {
+                    Date = g.Key.Date,
+                    Category = g.Key.Category,
+                    Total = g.Sum(sm => sm.Quantity)
+                })
+                .ToList();
+
+            return Ok(data);
+        }
+
+        [HttpGet("stock-exits/today")]
+        public IActionResult GetTotalStockExitsToday()
+        {
+            var today = DateTime.Today;
+            var exits = _context.StockMovements
+                .Where(sm => sm.Date.Date == today && sm.Quantity < 0 && !sm.IsDeleted)
+                .Sum(sm => Math.Abs(sm.Quantity));
+            return Ok(exits);
+        }
+
+        [HttpGet("stock-entries/today")]
+        public IActionResult GetTotalStockEntriesToday()
+        {
+            var today = DateTime.Today;
+            var entries = _context.StockMovements
+                .Where(sm => sm.Date.Date == today && sm.Quantity > 0 && !sm.IsDeleted)
+                .Sum(sm => sm.Quantity);
+            return Ok(entries);
+        }
+
+
     }
 }
     
