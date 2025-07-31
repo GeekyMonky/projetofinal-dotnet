@@ -57,7 +57,7 @@
                             <th>Category</th>
                             <th>Products</th>
                             <th>Total Quantity</th>
-                            <th>Average Price</th>
+                            <th>Average Price(€)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -67,7 +67,7 @@
                                 <td>@category.CategoryName</td>
                                 <td>@category.ProductCount</td>
                                 <td>@category.TotalQuantity</td>
-                                <td>€@category.AverageCost.ToString("N2")</td>
+                                <td>@category.AverageCost.ToString("N2")</td>
                             </tr>
                         }
                         <tr style="font-weight:bold;">
@@ -75,7 +75,7 @@
                             <td>@topCategoriesWithAverageCost.Sum(c => c.ProductCount)</td>
                             <td>@topCategoriesWithAverageCost.Sum(c => c.TotalQuantity)</td>
                             <td>
-                                €@(
+                                @(
                                    topCategoriesWithAverageCost.Any()
                                    ? (topCategoriesWithAverageCost.Sum(c => c.AverageCost) / topCategoriesWithAverageCost.Count).ToString("N2")
                                    : "0.00"
