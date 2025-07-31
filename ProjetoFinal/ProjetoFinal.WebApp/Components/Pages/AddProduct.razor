@@ -12,13 +12,17 @@
 @* Needed for snackbars *@
 <MudSnackbarProvider />
 
+
+
 @if (Id > 0)
 {
     <h3>Edit Product</h3>
+    <PageTitle>Edit Product</PageTitle>
 }
 else
 {
     <h3>Add Product</h3>
+    <PageTitle>Add Product</PageTitle>
 }
 
 @if (_loadingCategories)
