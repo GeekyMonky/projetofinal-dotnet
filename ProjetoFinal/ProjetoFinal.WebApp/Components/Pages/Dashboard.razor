@@ -2,7 +2,7 @@
 @using System.Collections.Generic
 @using System.Linq
 @using MudBlazor
-
+@rendermode InteractiveServer
 @inject DashboardService DashboardService
 
 <PageTitle>Dashboard</PageTitle>
@@ -12,15 +12,15 @@
 <div class="dashboard-container">
     <!-- KPI Cards -->
     <div class="dashboard-row">
-        <div class="dashboard-card">
+        <div class="dashboard-card red-bg">
             <h4>Stock Exits Today</h4>
-            <p class="dashboard-value" style="color: #e53935;">-@totalExits</p>
+            <p class="dashboard-value">-@totalExits</p>
         </div>
-        <div class="dashboard-card">
+        <div class="dashboard-card green-bg">
             <h4>Stock Entries Today</h4>
-            <p class="dashboard-value" style="color: #43a047;">+@totalEntries</p>
+            <p class="dashboard-value">+@totalEntries</p>
         </div>
-        <div class="dashboard-card">
+        <div class="dashboard-card yellow-bg">
             <h4>Total Stock Value</h4>
             <p class="dashboard-value">€@totalStockValue.ToString("N2")</p>
         </div>
@@ -98,13 +98,12 @@
             }
             else
             {
-                <MudChart ChartType="ChartType.StackedBar"
+                <MudChart ChartType="ChartType.Line"
                           InputLabels="@barLabels"
                           Width="100%" Height="600px"
                           ChartSeries="@chartSeries"
                           XAxisLabels="@barLabels"
-                          LegendPosition="Position.Bottom"
-                          Stacked="true" />
+                          LegendPosition="Position.Bottom" />
 
 
             }
@@ -132,10 +131,24 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
+    .dashboard-card.red-bg {
+    background-color: #e53935;
+    color: #fff;
+}
+
+.dashboard-card.green-bg {
+    background-color: #43a047;
+    color: #fff;
+}
+
+.dashboard-card.yellow-bg {
+    background-color: #fbc02d;
+    color: #2c3e50;
+}
+
     .dashboard-value {
         font-size: 24px;
         font-weight: bold;
-        color: #2c3e50;
     }
 
     .dashboard-section {
@@ -390,7 +403,7 @@
         {
             var data = await DashboardService.GetDailyMovementsByCategoryAsync();
 
-            // Prepare the last 15 days as DateTime (oldest to newest)
+            // Prepare the last 15 days as DateTime (oldest toNewest)
             var dates = Enumerable.Range(0, 15)
                 .Select(i => DateTime.Today.AddDays(-14 + i).Date)
                 .ToArray();
